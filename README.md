@@ -6,7 +6,7 @@ If you are going to make adjustments, I think the only things you have to edit a
 
     /assets has aesthetics stuff, like logos and css stylesheets
     /components has the FUNCTIONAL aesthetics stuff. Specifically, templates that we can reference across pages.
-    /router has the code for page navigation (I think). I would suggest not touching that.
+    /router has the code for page navigation. Might have to be updated periodically with new pages being added.
     /views has the actual pages. Add them as required and then we can just call the code to navigate pages (I think)
 
 Do not touch anything else (I think)
