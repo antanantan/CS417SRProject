@@ -15,26 +15,12 @@ If you are developing and want to see your updates in real-time, run
 ```
 npm run dev 
 ```
-in your Terminal.
-
+in your Terminal. Any updates you save to the program will update in real time which is pretty neat.
 
 
 ## Recommended IDE Setup
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
-
-## Customize configuration
-
 See [Vite Configuration Reference](https://vite.dev/config/).
 
-## Project Setup
 
-```sh
-npm install
-```
-
-### Compile and Minify for Production
-
-```sh
-npm run build
-```
