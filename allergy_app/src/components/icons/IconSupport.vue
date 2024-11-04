@@ -5,3 +5,5 @@
     />
   </svg>
 </template>
+
+<!--we can use this template to give our application some icons-->
