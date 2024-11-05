@@ -14,3 +14,5 @@ defineProps({
     <slot></slot>
   </div>
 </template>
+
+<!--home screen template?-->

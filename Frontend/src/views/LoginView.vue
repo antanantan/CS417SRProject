@@ -17,7 +17,7 @@ const goToForgotPassword = () => {
 };
 
 const continueAsGuest = () => {
-  router.push('/home'); // Adjust the route as necessary
+  router.push('/allergy_list'); // Adjust the route as necessary
 };
 </script>
 
@@ -25,10 +25,8 @@ const continueAsGuest = () => {
   <div class="flex items-center justify-center min-h-screen bg-gray-100">
     <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
       <div class="text-center mb-6">
-        <h1 class="text-4xl font-bold text-gray-800">Eat Well</h1>
-        <p class="text-lg text-gray-600">Please Sign In</p>
       </div>
-      
+      <br>
       <form @submit.prevent="handleLogin">
         <div class="mb-4">
           <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
