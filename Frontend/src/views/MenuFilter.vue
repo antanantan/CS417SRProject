@@ -1,23 +1,23 @@
 <script setup>
 import HomeCards from '@/components/HomeCards.vue';
 
-const gotoAllergyList = () => {
-    router.push('/allergy_list');
+const gotoLocation = () => {
+    router.push('/location');
   };
   
-const gotoMenuFilter = () => {
-    router.push('/menu');
+const gotoOrderView = () => {
+    router.push('/order');
   };
   
 </script>
 
 <template>
-    <p>this page will allow the user to select a restaurant based on a location on the map that will be displayed i suppose</p>
+    <p>this page will allow the user to select menu options that are not grayed out based on their allergy preferences</p>
     <div class="text-center mt-4">
         <RouterLink
-        to="/allergy_list"
+        to="/location"
         class="text-blue-500 hover:underline"
-        @click.prevent="gotoAllergyList"
+        @click.prevent="gotoLocation"
         >
         Go Back
         </RouterLink>
@@ -25,14 +25,12 @@ const gotoMenuFilter = () => {
     <br>
     <div class="text-center mt-4">
         <RouterLink
-        to="/menu"
+        to="/order"
         class="text-blue-500 hover:underline"
-        @click.prevent="gotoMenuFilter"
+        @click.prevent="gotoOrderView"
         >
-        Step 3: Menu
+        Step 4: Ordering
         </RouterLink>
     </div>
-    
-    
 </template>
   
