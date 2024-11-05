@@ -5,6 +5,7 @@ import AllergyListView from '@/views/AllergyListView.vue'
 import LocationView from '@/views/LocationView.vue';
 import MenuFilter from '@/views/MenuFilter.vue';
 import OrderView from '@/views/OrderView.vue';
+import PasswordReset from '@/views/PasswordReset.vue';
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -13,6 +14,11 @@ const router = createRouter({
       path: '/',
       name: 'home',
       component: HomeView
+    },
+    {
+      path: '/forgot-password',
+      name: 'Forgot',
+      component: PasswordReset 
     },
     {
       path: '/login',

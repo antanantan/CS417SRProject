@@ -31,8 +31,7 @@ const isActiveLink = (routePath) => {
                   'px-3',
                   'py-2',
                   'rounded-md',
-                ]"
-                >Log In</RouterLink
+                ]">Log In</RouterLink
               ><br></br>
               <RouterLink
                 to="/allergy_list"
@@ -45,7 +44,7 @@ const isActiveLink = (routePath) => {
                   'py-2',
                   'rounded-md',
                 ]"
-                >Continue as Guest</RouterLink
+                >Guest</RouterLink
               >
             </div>
           </div>

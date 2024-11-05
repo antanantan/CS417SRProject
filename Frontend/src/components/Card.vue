@@ -11,8 +11,8 @@ defineProps({
 
 <template>
   <div :class="`${bg} p-6 rounded-lg shadow-md`">
-    <slot></slot>
+    <a href>test</a>
   </div>
 </template>
 
-<!--home screen template?-->
+<!--it's be nice to have these in the step menus-->
