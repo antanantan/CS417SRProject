@@ -23,7 +23,7 @@ const router = createRouter({
       component: AllergyListView 
     },
     {
-      path: '/restaurant_picker',
+      path: '/location',
       name: 'Location',
       component: LocationView 
     }

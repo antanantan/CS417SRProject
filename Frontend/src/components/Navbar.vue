@@ -35,7 +35,7 @@ const isActiveLink = (routePath) => {
                 >Log In</RouterLink
               ><br></br>
               <RouterLink
-                to="/allergy"
+                to="/allergy_list"
                 :class="[
                   isActiveLink('/login')
                     ? 'bg-green-900'
