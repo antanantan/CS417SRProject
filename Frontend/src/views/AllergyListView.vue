@@ -2,7 +2,7 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const locationPicker = () => {
+const gotoLocationPicker = () => {
   router.push('/location');
 };
 
@@ -10,6 +10,13 @@ const locationPicker = () => {
 
 <template>
     <p>this page will have a list of allergens and dietary restrictions that the user can filter</p>
-          Next Step: Location
+    <div class="text-center mt-4">
+        <RouterLink
+          to="/location"
+          class="text-blue-500 hover:underline"
+          @click.prevent="gotoLocationPicker">
+          Step 2: Location Picker
+        </RouterLink>
+    </div>
     
   </template>
