@@ -1,6 +1,6 @@
 <script setup>
 import HomeCards from '@/components/HomeCards.vue';
-import Card from '@/components/Card.vue';
+import Card from '@/components/Steps_Bottom.vue';
 
 const gotoLocation = () => {
     router.push('/location');
