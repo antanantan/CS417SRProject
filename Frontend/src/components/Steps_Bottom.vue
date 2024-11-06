@@ -5,19 +5,20 @@ import { GrowBottomNavigation } from "bottom-navigation-vue";
 import "bottom-navigation-vue/dist/style.css";
 import OrderView from "@/views/OrderView.vue";
 import { Icon } from '@iconify/vue';
+import AllergyListView from "@/views/AllergyListView.vue";
+import LocationView from "@/views/LocationView.vue";
+import { ref } from "vue";
+import { RouterLink } from "vue-router";
 
-const gotoOrderView = () => {
-    router.push('/order');
-  };
 export default {
     components: { GrowBottomNavigation },
     data: () => ({
-    selected: 1,
+    selected: ref,
     options: [
-      { id: 1, Icon:"mdi:food-allergy", class:"h-12 w-12 text-green-600 mx-auto mb-4", title: 'Step 1: Allergy Profile', color: '#db79cf', path: onclick=gotoOrderView},
-      { id: 2, icon: 'test.png', title: 'Step 2: Choose Restaurant', color: '#db79cf', path: '/location'},
-      { id: 3, icon: 'test.png', title: 'Step 3: Menu Filter', color: '#db79cf', path: ''},
-      { id: 4, icon: 'test.png', title: 'Step 4: Place Order', color: '#db79cf', path: '/'}
+      { id: 1, title: 'Step 1: Allergy Profile', color: '#db79cf', path: '/'},
+      { id: 2, title: 'Step 2: Choose Restaurant', color: '#db79cf'},
+      { id: 3, title: 'Step 3: Menu Filter', color: '#db79cf'},
+      { id: 4, title: 'Step 4: Place Order', color: '#db79cf'}
     ]
     }),
   };
@@ -25,7 +26,16 @@ export default {
 </script>
 
 <template>
-  <GrowBottomNavigation :options="options" v-model="selected" />
+    <GrowBottomNavigation :options="options" v-model=RouterLink />
+      <li v-for="option in options" :key="option.id">
+        <router-link 
+          :to="option.path"
+          :style="{ color: option.color }"
+          :class="{ active: isActive(option.path) }">
+          {{ option.title }}
+        </router-link>
+      </li>
+
 </template>
 
 

@@ -45,7 +45,7 @@ const router = createRouter({
       name: 'Order',
       component: OrderView 
     }
-  ]
+  ],
 })
 
 export default router;
