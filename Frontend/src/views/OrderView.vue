@@ -1,7 +1,7 @@
 <script setup>
 import HomeCards from '@/components/HomeCards.vue';
 import yippee from '@/assets/img/yippee.jpg';
-import Card from '@/components/Card.vue';
+import Card from '@/components/Steps_Bottom.vue';
 </script>
 
 <template>

@@ -1,7 +1,5 @@
 <script setup>
-import { ref } from 'vue';
-import { useRouter } from 'vue-router';
-import Card from '@/components/Card.vue';
+import Card from '@/components/Steps_Bottom.vue';
 
 const gotoLocationPicker = () => {
   router.push('/location');};
@@ -37,9 +35,9 @@ export default {
     data() {
       return {
         items: [
-          { label: 'Allergen 1', checked: false },
-          { label: 'Allergen 2', checked: true },
-          { label: 'Allergen 3', checked: false }
+          { label: 'Peanuts', checked: false },
+          { label: 'Tree Nuts', checked: false },
+          { label: 'Shellfish', checked: false }
         ]
       }
     }
