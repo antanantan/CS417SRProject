@@ -32,8 +32,7 @@ const gotoMenuFilter = () => {
         Step 3: Menu
         </RouterLink>
     </div>
-    <Card>
-    </Card>
+    <Card></Card>
 </template>
 
 <!--TODO: implement map view somehow. a map.py was started in the backend-->

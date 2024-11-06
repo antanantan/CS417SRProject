@@ -8,7 +8,7 @@ defineProps({
   },
   subtitle: {
     type: String,
-    default: 'Log In or Continue as Guest',
+    default: 'allergy-friendly ordering',
   },
 });
 </script>
