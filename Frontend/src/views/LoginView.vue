@@ -17,7 +17,7 @@ const goToForgotPassword = () => {
 };
 
 const continueAsGuest = () => {
-  router.push('/allergy_list'); // Adjust the route as necessary
+  router.push('/allergy_list'); 
 };
 </script>
 
@@ -61,6 +61,23 @@ const continueAsGuest = () => {
           Sign In
         </button>
       </form>
+<!--reference: https://www.shecodes.io/athena/53677-how-to-create-a-login-page-with-form-validation-using-html-css-and-javascript-->
+      <!--script type="text/javascript">
+        const form = document.querySelector('form');
+        form.addEventListener('submit', function(event) {
+            event.preventDefault(); // prevent default form submission behavior
+
+            // validate username and password
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            if (username === 'myusername' && password === 'mypassword') {
+                alert('Login successful!');
+            } else {
+                alert('Username or password incorrect. Please try again.');
+            }
+        });
+    </script-->
+<!--maybe we have to implement some js to confirm or deny the user access-->
 
       <div class="text-center mt-4">
         <RouterLink

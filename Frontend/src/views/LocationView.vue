@@ -1,5 +1,6 @@
 <script setup>
 import HomeCards from '@/components/HomeCards.vue';
+import Card from '@/components/Card.vue';
 
 const gotoAllergyList = () => {
     router.push('/allergy_list');
@@ -32,7 +33,9 @@ const gotoMenuFilter = () => {
         Step 3: Menu
         </RouterLink>
     </div>
-    
-    
+    <Card>
+    </Card>
 </template>
+
+<!--TODO: implement map view somehow. a map.py was started in the backend-->
   
