@@ -7,6 +7,6 @@ import Card from '@/components/Steps_Bottom.vue';
 <template>
     <img class="h-10 w-auto" :src="yippee" alt="Stock Image"/>
     <p>this page will allow the user to order their food yay</p>
-    <Card></Card>
+    <Card/>
 </template>
   

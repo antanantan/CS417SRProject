@@ -1,8 +1,20 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
+import {ref} from 'vue';
+import {useRouter, RouterLink } from "vue-router";
+
+const router = useRouter();
 
 const gotoLocationPicker = () => {
   router.push('/location');};
+
+const items = ref([
+  { label: 'Peanuts', checked: false },
+  { label: 'Tree Nuts', checked: false },
+  { label: 'Shellfish', checked: false }
+]);
+
+
 </script>
 
 <template>
@@ -25,25 +37,9 @@ const gotoLocationPicker = () => {
       </li>
     </ul>
   </div>
-
-      <Card>
-      </Card>
+    <Card />
 </template>
 
-<script>
-export default {
-    data() {
-      return {
-        items: [
-          { label: 'Peanuts', checked: false },
-          { label: 'Tree Nuts', checked: false },
-          { label: 'Shellfish', checked: false }
-        ]
-      }
-    }
-  }
-
-</script>
 
   
 

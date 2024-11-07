@@ -24,6 +24,6 @@ const gotoOrderView = () => {
         Step 4: Ordering
         </RouterLink>
     </div>
-    <Card></Card>
+    <Card/>
 </template>
   
