@@ -89,7 +89,7 @@ const continueAsGuest = () => {
         </RouterLink>
         <span class="text-gray-500 mx-2">or</span>
         <RouterLink
-          to="/home"
+          to="/"
           class="text-blue-500 hover:underline"
           @click.prevent="continueAsGuest"
         >
