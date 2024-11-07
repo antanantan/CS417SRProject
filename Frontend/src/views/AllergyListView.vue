@@ -1,5 +1,10 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
+import {ref} from 'vue';
+import {useRouter, RouterLink } from "vue-router";
+import Disclaimer from '@/components/Disclaimer.vue';
+
+const router = useRouter();
 
 const gotoLocationPicker = () => {
   router.push('/location');};
@@ -25,9 +30,7 @@ const gotoLocationPicker = () => {
       </li>
     </ul>
   </div>
-
-      <Card>
-      </Card>
+      <Card></Card>
 </template>
 
 <script>
