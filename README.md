@@ -24,3 +24,6 @@ in your Terminal. Any updates you save to the program will update in real time w
 See [Vite Configuration Reference](https://vite.dev/config/).
 
 
+This is a test of the Branch feature, so that we can each do our own development and then compare versions and merge what we can to the main branch.
+
+
