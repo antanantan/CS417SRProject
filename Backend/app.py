@@ -5,10 +5,10 @@ app = Flask(__name__)
 
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-@app.route('/disclaimer')
+@app.route('/')
 def disclaimer():
-    Flask.flash("DISCLAIMER TEST")
-    return 
+    Flask.flash("DISCLAIMER TEST", 'success')
+    return Flask.render_template('index.html')
 
 if __name__ == '__main__':
     app.run(debug=True)

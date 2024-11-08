@@ -1,7 +1,5 @@
 <template>
-    <div>
-      <p>{{ msg }}</p>
-    </div>
+    <div></div>
 </template>
   
 <script>
@@ -17,7 +15,7 @@ export default {
   methods: {
     getMessage() {
       const path = 'SeniorProj/backend/app.py';
-      axios.get(path)
+      axios.get('/Backend')
         .then((res) => {
           this.msg = res.data;
         })
