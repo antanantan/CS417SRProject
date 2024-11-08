@@ -1,32 +1,27 @@
 <template>
-    <div></div>
+    <div v-if="show" class="popup">
+    <div class="popup-content">
+      <h2>Test</h2>
+      <p>this is a test</p>
+      <button @click="closePopup">Close</button>
+    </div>
+  </div>
 </template>
   
 <script>
 import axios from 'axios';
 
 export default {
-  name: 'Disclaimer',
   data() {
     return {
       msg: 'this is a test',
     };
   },
   methods: {
-    getMessage() {
-      const path = 'SeniorProj/backend/app.py';
-      axios.get('/Backend')
-        .then((res) => {
-          this.msg = res.data;
-        })
-        .catch((error) => {
-          console.error(error);
-        });
-    },
-  },
-  created() {
-    this.getMessage();
-  },
+    closePopup() {
+      this.show = false;
+    }
+  }
 };
 </script>
 

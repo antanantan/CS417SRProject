@@ -12,26 +12,8 @@ const gotoMenuFilter = () => {
 </script>
 
 <template>
-    <p>this page will allow the user to select a restaurant based on a location on the map that will be displayed i suppose</p>
-    <div class="text-center mt-4">
-        <RouterLink
-        to="/allergy_list"
-        class="text-blue-500 hover:underline"
-        @click.prevent="gotoAllergyList"
-        >
-        Go Back
-        </RouterLink>
-    </div>
-    <br>
-    <div class="text-center mt-4">
-        <RouterLink
-        to="/menu"
-        class="text-blue-500 hover:underline"
-        @click.prevent="gotoMenuFilter"
-        >
-        Step 3: Menu
-        </RouterLink>
-    </div>
+  <p>Step 2: Select your desired location</p>
+  <!--insert map from flask backend. takes in zip code input and spits out a location in folium-->
     <Card></Card>
 </template>
 

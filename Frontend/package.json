@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "autoprefixer": "^10.4.20",
+    "bottom-navigation-vue": "^3.3.5",
     "postcss": "^8.4.47",
     "vue": "^3.5.12",
     "vue-router": "^4.4.5"

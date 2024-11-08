@@ -43,8 +43,6 @@ watch(route, (newRoute) => {
           {{ props.title }}
         </span>
       </template> 
-
-
     </GrowBottomNavigation>
   </div>
 </template>
