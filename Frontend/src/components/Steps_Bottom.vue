@@ -23,21 +23,19 @@ watch(route, (newRoute) => {
   selectedOption.value = newRoute.path;
 });
 
-
-
 </script>
 
 <template>
   <div class="bottom-navigation">
     <GrowBottomNavigation 
-    modelValue="selectedOption" 
+    v-model="selectedOption" 
     :options="options"
     class="flex justify-around items-center text-center"
     >
       <template #icon="{ props }">
         <div class ="flex justify-center items-center">
-        <Icon :icon="props.icon" class="h-7 w-7" mb-1 />
-        </div>  
+        <Icon :icon="props.icon" class="h-7 w-7 mb-1" />
+        </div>
       </template>
 
       <template #title="{ props }">
@@ -45,8 +43,6 @@ watch(route, (newRoute) => {
           {{ props.title }}
         </span>
       </template> 
-
-
     </GrowBottomNavigation>
   </div>
 </template>
@@ -58,6 +54,5 @@ watch(route, (newRoute) => {
 <!--ref: https://mbanga-anele.medium.com/how-to-add-a-sophisticated-bottom-navigation-bar-to-your-vue-apps-12cd46185f94-->
 <!--ref: https://github.com/imanmalekian31/vue-bottom-navigation -->
 <!--ref: https://vuetifyjs.com/en/components/bottom-navigation/#usage-->
-<!--https://vue-bottom-navigation.netlify.app/
-https://vue-bottom-navigation.netlify.app/guide/grow
--->
+<!--https://vue-bottom-navigation.netlify.app/-->
+<!--https://vue-bottom-navigation.netlify.app/guide/grow-->
