@@ -6,8 +6,6 @@ import HowItWorks from '@/components/HowItWorks.vue';
 </script>
 
 <template>
-  <!--Disclaimer is there for testing purposes. Remove after successful implementation.-->
-  <Disclaimer/>
   <Hero/>
   <HomeCards/>
   <HowItWorks/>

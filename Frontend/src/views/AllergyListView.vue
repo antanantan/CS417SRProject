@@ -10,14 +10,7 @@ const gotoLocationPicker = () => {
   router.push('/location');};
 </script>
 
-<!--attempting to get the disclaimer to show up first thing before proceeding to the allergy page-->
 <template>
-
-  <div>
-    <button @click="showPopup = true">Disclaimer Test</button>
-    <Popup v-if="showPopup" @close="showPopup = false" />
-  </div>
-
   <p>Step 1: Select your allergies/dietary restrictions</p>
       <div>
     <h2>Checklist</h2>

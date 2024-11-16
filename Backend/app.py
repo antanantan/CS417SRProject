@@ -5,12 +5,6 @@ app = Flask(__name__)
 
 CORS(app, resources={r'/*': {'origins': '*'}})
 
-@app.route('/home', methods=['POST'])
-def disclaimer():
-    error: None
-    Flask.flash("DISCLAIMER TEST", 'success')
-    return jsonify("THIS IS A TEST")
-
 if __name__ == '__main__':
     app.run(debug=True)
 

@@ -1,28 +1,33 @@
 <template>
-    <div v-if="show" class="popup">
-    <div class="popup-content">
-      <h2>Test</h2>
-      <p>this is a test</p>
-      <button @click="closePopup">Close</button>
+  <transition name="modal-animation">
+    <div v-show="disclaimerActive" class="modal">
+        <transition name="modal-animation-inner">
+          <div v-show="disclaimerActive" class="modal-inner">
+            <slot>
+              <p>this is a test</p>
+            </slot>
+            <button @click="close" type="button">I Agree</button>
+            <button>I Disagree</button>
+          </div>
+        </transition>
     </div>
-  </div>
+  </transition>
 </template>
-  
-<script>
-import axios from 'axios';
 
+<script>
 export default {
-  data() {
-    return {
-      msg: 'this is a test',
-    };
-  },
-  methods: {
-    closePopup() {
-      this.show = false;
-    }
+props: ["disclaimerActive"],
+setup(props, {emit}) {
+  const close = () => {
+    emit("close");
+    return {close}
   }
+
+}
 };
 </script>
 
+
+
 <!--ref: https://testdriven.io/blog/developing-a-single-page-app-with-flask-and-vuejs/-->
+<!--ref: https://www.youtube.com/watch?v=NFdvWBh-D6k-->
