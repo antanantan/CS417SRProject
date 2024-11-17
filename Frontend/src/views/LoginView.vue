@@ -61,6 +61,7 @@ const continueAsGuest = () => {
           Sign In
         </button>
       </form>
+      
 <!--reference: https://www.shecodes.io/athena/53677-how-to-create-a-login-page-with-form-validation-using-html-css-and-javascript-->
       <!--script type="text/javascript">
         const form = document.querySelector('form');

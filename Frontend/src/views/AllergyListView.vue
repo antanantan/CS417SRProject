@@ -1,16 +1,16 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-import {ref} from 'vue';
-import {useRouter, RouterLink } from "vue-router";
-import Disclaimer from '@/components/Disclaimer.vue';
+import {useRouter } from "vue-router";
+import Modal from '@/components/Disclaimer.vue';
 
 const router = useRouter();
-
-const gotoLocationPicker = () => {
-  router.push('/location');};
 </script>
 
+<!--NOTE: the disclaimer generates on the test page, but not on this page-->
 <template>
+  <div id="app">
+  <Modal v-show="isModalVisible" @close="closeModal"/>
+  </div>  
   <p>Step 1: Select your allergies/dietary restrictions</p>
       <div>
     <h2>Checklist</h2>
@@ -26,6 +26,22 @@ const gotoLocationPicker = () => {
 
 <script>
 export default {
+  components: {
+      Modal,
+    },
+    data() {
+      return {
+        isModalVisible: true,
+      };
+    },
+    methods: {
+      showModal() {
+        this.isModalVisible = true;
+      },
+      closeModal() {
+        this.isModalVisible = false;
+      }
+    },
     data() {
       return {
         items: [
@@ -34,12 +50,10 @@ export default {
           { label: 'Shellfish', checked: false }
         ]
       }
-    }
-  }
-
+    },
+  };
+    
 </script>
-
-  
 
 <!--TODO: implement checklist feature-->
 <!--reference: https://www.google.com/search?q=how+to+implement+a+checklist+in+vue&sca_esv=2100fb941db67f3a&ei=6ZkqZ8fcKLqHptQPxqS4kAE&ved=0ahUKEwiH9ZbYnMaJAxW6g4kEHUYSDhIQ4dUDCBA&uact=5&oq=how+to+implement+a+checklist+in+vue&gs_lp=Egxnd3Mtd2l6LXNlcnAiI2hvdyB0byBpbXBsZW1lbnQgYSBjaGVja2xpc3QgaW4gdnVlMgUQIRigATIFECEYoAEyBRAhGKABMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwVIwQ5QqglYsQpwBHgBkAEAmAGDAaABpAKqAQMyLjG4AQPIAQD4AQGYAgegArECwgIKEAAYsAMY1gQYR8ICBhAAGBYYHsICCxAAGIAEGIYDGIoFwgIIEAAYgAQYogSYAwCIBgGQBgiSBwM2LjGgB8YV&sclient=gws-wiz-serp-->

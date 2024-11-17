@@ -1,14 +1,5 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-
-const gotoAllergyList = () => {
-    router.push('/allergy_list');
-  };
-  
-const gotoMenuFilter = () => {
-    router.push('/menu');
-  };
-  
 </script>
 
 <template>

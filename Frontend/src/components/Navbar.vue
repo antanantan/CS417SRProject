@@ -44,8 +44,7 @@ const isActiveLink = (routePath) => {
                   'py-2',
                   'rounded-md',
                 ]"
-                >Guest</RouterLink
-              >
+                >Guest</RouterLink>
             </div>
           </div>
         </div>

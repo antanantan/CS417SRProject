@@ -1,32 +1,30 @@
-<!--for testing new components-->
-
+<!--use this to test new components-->
 <template>
-<p>test</p>
-<Disclaimer @close="toggleDisclaimer":disclaimerActive="disclaimerActive">
-    <div class="modal-content">
-      <h1>this is a test</h1>
-      <p>this will be the disclaimer</p>
-    </div>
-  </Disclaimer>
-  <button @click="toggleDisclaimer" type="button">Test</button>
-
+  <div id="app">
+    <Modal
+      v-show="isModalVisible"
+      @close="closeModal"/>
+  </div>
 </template>
 
 <script>
-import Disclaimer from '@/components/Disclaimer.vue'
+import Modal from "@/components/Disclaimer.vue"
 export default {
-    name: "Disclaimer",
-    components: {
-        Disclaimer,
+components: {
+      Modal,
     },
-    setup() {
-        const disclaimerActive = ref(true);
-
-        const toggleDisclaimer = () => {
-        disclaimerActive.value = !modalActive.value;
+    data() {
+      return {
+        isModalVisible: true,
+      };
+    },
+    methods: {
+      showModal() {
+        this.isModalVisible = true;
+      },
+      closeModal() {
+        this.isModalVisible = false;
+      }
     }
-
-    return {disclaimerActive, toggleDisclaimer}
-    }
-}
+};
 </script>
