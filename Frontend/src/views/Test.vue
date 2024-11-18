@@ -9,6 +9,7 @@
 
 <script>
 import Modal from "@/components/Disclaimer.vue"
+/* this script is important to get the program to work */
 export default {
 components: {
       Modal,

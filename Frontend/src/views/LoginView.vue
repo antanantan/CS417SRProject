@@ -101,6 +101,4 @@ const continueAsGuest = () => {
   </div>
 </template>
 
-<style scoped>
-/* Add any custom styles here */
-</style>
+<style></style>

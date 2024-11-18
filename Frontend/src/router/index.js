@@ -7,6 +7,7 @@ import MenuFilter from '@/views/MenuFilter.vue';
 import OrderView from '@/views/OrderView.vue';
 import PasswordReset from '@/views/PasswordReset.vue';
 import Test from '@/views/Test.vue'
+import Profile from '@/views/Profile.vue';
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
@@ -49,6 +50,11 @@ const router = createRouter({
       path: '/test',
       name: 'Test',
       component: Test 
+    },
+    {
+      path: '/profile',
+      name: 'Profile',
+      component: Profile 
     }
   ],
 })
