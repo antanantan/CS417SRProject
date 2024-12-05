@@ -4,10 +4,9 @@
 import { GrowBottomNavigation } from "bottom-navigation-vue";
 import "bottom-navigation-vue/dist/style.css";
 import { Icon } from '@iconify/vue';
-import {RouterLink, useRouter, useRoute } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ref, watch} from 'vue';
 
-const router = useRouter(); 
 const route = useRoute(); 
 const selectedOption = ref(route.path);
 
