@@ -1,5 +1,13 @@
 # CS417SRProject
 
+## Run Instructions:
+
+1) cd into the "Frontend" folder.
+2) run "npm run dev".
+
+
+## Notes for Devs
+
 Vue Router is already installed in this application.
 
 If you are going to make adjustments, I think the only things you have to edit are in the /src and /public folders.
@@ -22,5 +30,4 @@ in your Terminal. Any updates you save to the program will update in real time w
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 See [Vite Configuration Reference](https://vite.dev/config/).
-
 
