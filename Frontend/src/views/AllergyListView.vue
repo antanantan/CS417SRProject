@@ -7,7 +7,7 @@ const router = useRouter();
 
 <!--NOTE: the disclaimer CLOSES on the test page, but not on this page. why won't it close-->
 <template>
-  <!--Modal @close="closeModal"/>
+  <Modal @close="closeModal"/>
   <h1>Step 1: Select your allergies/dietary restrictions</h1>
       <div>
     <h2>Checklist</h2>
@@ -17,7 +17,7 @@ const router = useRouter();
         <label>{{ item.label }}</label>
       </li>
     </ul>
-  </div-->
+  </div>
 
   <div class="allergy-container">
     <div class="controls">
