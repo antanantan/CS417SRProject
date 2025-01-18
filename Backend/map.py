@@ -11,3 +11,6 @@ folium.Marker([40.7128, -74.0060], popup="New York City").add_to(m)
 # Save the map as an HTML file
 m.save("/Frontend/src/assets/map.html")
 # i might be trippin but how do you have it save in a certain folder
+
+
+# TODO: how do you display this on a Vue webpage?

@@ -13,6 +13,8 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 print(BASE_DIR)
 DATABASE = os.path.join(BASE_DIR, "profiles.db")
 
+
+# function to get database connection
 def get_db():
     db = getattr(g, '_database', None)
     if db is None:
@@ -39,6 +41,8 @@ def create_db():
     db.commit()
     db.close()
 
+# TODO: based on this framework, get the application to accept input of a username and password, store it in a database, and be able to associate an allergy profile with that signed-in user
+
 def insert_data(username, form_data):
     db = sqlite3.connect(DATABASE)
     cursor = db.cursor()
@@ -59,6 +63,54 @@ def get_data(username):
     result = cursor.fetchone()
     db.close()
     return json.loads(result[0]) if result else None
+
+
+"""
+NOTE: i pulled this from a previous project. it cross-checks the database for copies of usernames when registering a new account. will have to be edited for this project
+
+@account_bp.route('/register', methods=['GET', 'POST'])
+def register():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+        hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
+
+        db = get_db()
+        cursor = db.cursor()
+
+        try:
+            cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
+            db.commit()
+            return redirect(url_for('account.login'))
+        except sqlite3.IntegrityError:
+            flash('username already taken. please choose a different one.')
+
+    return render_template('register.html')
+"""
+
+"""
+NOTE: i also pulled this from a previous project. it's for logging in returning users
+
+@account_bp.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        username = request.form['username']
+        password = request.form['password']
+
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+        user = cursor.fetchone()
+
+        if user and bcrypt.check_password_hash(user[2], password):
+            session['username'] = username
+            return redirect("/dashboard")
+        else:
+            flash('invalid credentials. please try again.')
+            return redirect(url_for('account.login'))
+    return render_template('login.html')
+
+"""
 
 if __name__ == '__main__':
     app.run(debug=True)

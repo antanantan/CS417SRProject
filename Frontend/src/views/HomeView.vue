@@ -8,5 +8,6 @@ import HowItWorks from '@/components/HowItWorks.vue';
 <template>
   <Hero/>
   <HomeCards/>
+  <p>placeholder for "create account" button</p>
   <HowItWorks/>
 </template>
