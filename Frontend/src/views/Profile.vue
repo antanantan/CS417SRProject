@@ -1,19 +1,6 @@
 <script setup>
-import NavBar from Navbar.vue
 </script>
-
 
 <template>
-<NavBar></NavBar>
-This page would display the user's profile upon logging in.
-Probably a profile picture
+  <p>TODO: create profile interface with username, email, allergy preferences</p>
 </template>
-
-
-<script>
-
-</script>
-
-<style>
-
-</style>

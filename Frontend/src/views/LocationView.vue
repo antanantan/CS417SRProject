@@ -6,6 +6,7 @@ import Card from '@/components/Steps_Bottom.vue';
   <h1>Step 2: Select Location</h1>
 <!--ref: https://www.google.com/search?q=insert+map+in+vue+using+folium&oq=insert+map+in+vue+using+folium&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDQ0MDFqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8-->
 
+
   <form method="POST">
     <label for="zip">ZIP/Postal Code: </label>
     <input type="text" id="zip" name="zip" required><br>
@@ -14,6 +15,7 @@ import Card from '@/components/Steps_Bottom.vue';
   <div>
     <iframe src="/src/assets/map.html" width="800" height="650"></iframe>
   </div>
+
 
   <Card></Card>
 </template>

@@ -24,7 +24,7 @@ const isActiveLink = (routePath) => {
               <RouterLink
                 to="/login"
                 :class="[
-                  isActiveLink('/home')
+                  isActiveLink('/')
                     ? 'bg-green-900'
                     : 'hover:bg-gray-900 hover:text-white',
                   'text-white',
