@@ -1,16 +1,21 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-
 </script>
 
 <template>
   <h1>Step 2: Select Location</h1>
 <!--ref: https://www.google.com/search?q=insert+map+in+vue+using+folium&oq=insert+map+in+vue+using+folium&gs_lcrp=EgZjaHJvbWUyBggAEEUYOdIBCDQ0MDFqMGo3qAIAsAIA&sourceid=chrome&ie=UTF-8-->
 
-<!--TODO: fix file ref
+
+  <form method="POST">
+    <label for="zip">ZIP/Postal Code: </label>
+    <input type="text" id="zip" name="zip" required><br>
+  </form>
+  
   <div>
-    <iframe :src="map.html" width="600" height="450"></iframe>
-  </div-->
+    <iframe src="/src/assets/map.html" width="800" height="650"></iframe>
+  </div>
+
 
   <Card></Card>
 </template>
@@ -20,7 +25,7 @@ import Card from '@/components/Steps_Bottom.vue';
 export default {
   data() {
     return {
-      mapURL: "/assets/map.html" // Update with the correct path
+      mapURL: "/src/assets/map.html" 
     };
   },
 };
@@ -32,5 +37,3 @@ h1 {
   text-align: center;
 }
 </style>
-<!--TODO: implement map view somehow. a map.py was started in the backend-->
-  
