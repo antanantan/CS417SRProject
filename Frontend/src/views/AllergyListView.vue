@@ -5,12 +5,12 @@ import {useRouter } from "vue-router";
 const router = useRouter();
 </script>
 
+
 <!--NOTE: the disclaimer CLOSES on the test page, but not on this page. why won't it close-->
 <template>
   <Modal @close="closeModal"/>
   <h1>Step 1: Select your allergies/dietary restrictions</h1>
       <div>
-    <h2>Checklist</h2>
     <ul>
       <li v-for="(item, index) in items" :key="index">
         <input type="checkbox" v-model="item.checked">
