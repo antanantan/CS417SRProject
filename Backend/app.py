@@ -36,6 +36,7 @@ def create_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL
+            allergy_data TEXT
         )
     ''')
     db.commit()
@@ -72,10 +73,6 @@ def serve_map(filename):
 
 # TODO: allow the site to accept zip code input via form, save that information to the user's profile, and generate a new map based on the user's specified location
 
-
-"""
-NOTE: i pulled this from a previous project. it cross-checks the database for copies of usernames when registering a new account. will have to be edited for this project
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -92,12 +89,6 @@ def register():
             return redirect(url_for('account.login'))
         except sqlite3.IntegrityError:
             flash('username already taken. please choose a different one.')
-
-    return render_template('register.html')
-"""
-
-"""
-NOTE: i also pulled this from a previous project. it's for logging in returning users
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -116,9 +107,10 @@ def login():
         else:
             flash('invalid credentials. please try again.')
             return redirect(url_for('account.login'))
-    return render_template('login.html')
 
-"""
+
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
