@@ -1,5 +1,3 @@
-<!--how to use icons T-T -->
-<!-- how to make navigation bar... NAVIGABLE??-->
 <script setup>
 import { GrowBottomNavigation } from "bottom-navigation-vue";
 import "bottom-navigation-vue/dist/style.css";

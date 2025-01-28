@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, g, send_from_directory
+from flask import Flask, flash, jsonify, g, redirect, request, send_from_directory, session, url_for
 from flask_cors import CORS
 import os, sqlite3, json
 from flask_bcrypt import Bcrypt
@@ -27,7 +27,7 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-def create_db():
+def create_db():    
     os.makedirs(os.path.dirname(DATABASE), exist_ok=True) 
     db = sqlite3.connect(DATABASE)
     cursor = db.cursor()
@@ -36,6 +36,7 @@ def create_db():
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL
+            allergy_data TEXT
         )
     ''')
     db.commit()
@@ -72,10 +73,6 @@ def serve_map(filename):
 
 # TODO: allow the site to accept zip code input via form, save that information to the user's profile, and generate a new map based on the user's specified location
 
-
-"""
-NOTE: i pulled this from a previous project. it cross-checks the database for copies of usernames when registering a new account. will have to be edited for this project
-
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -92,12 +89,6 @@ def register():
             return redirect(url_for('account.login'))
         except sqlite3.IntegrityError:
             flash('username already taken. please choose a different one.')
-
-    return render_template('register.html')
-"""
-
-"""
-NOTE: i also pulled this from a previous project. it's for logging in returning users
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -116,9 +107,25 @@ def login():
         else:
             flash('invalid credentials. please try again.')
             return redirect(url_for('account.login'))
-    return render_template('login.html')
 
-"""
+@app.route('/addAllergy', methods=['POST'])
+def add_allergy():
+    username = request.form['username']
+    allergies = request.form.get['allergies']
+    
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+
+    if user_id == user[0]:
+        for allergy in allergies:
+            cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies))
+            db.commit()
+
+#remove allergy
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
