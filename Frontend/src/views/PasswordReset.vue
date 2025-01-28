@@ -49,5 +49,4 @@ const continueAsGuest = () => {
 </template>
 
 <style scoped>
-/* Add any custom styles here */
 </style>

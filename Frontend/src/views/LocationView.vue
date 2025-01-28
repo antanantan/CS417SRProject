@@ -9,8 +9,10 @@ import Card from '@/components/Steps_Bottom.vue';
 
   <form method="POST">
     <label for="zip">ZIP/Postal Code: </label>
-<!--TODO (if it's worth doing): send a zip code to the backend so that it can generate a map based on it?-->
-    <input type="text" id="zip" name="zip" required><br>
+    <input type="text" id="zip" name="zip" required>
+    <button @click="submitZipCode">Submit</button>
+    <br>
+    
   </form>
   
   <div>
@@ -23,6 +25,8 @@ import Card from '@/components/Steps_Bottom.vue';
 
 
 <script>
+import axios from 'axios';
+
 export default {
   data() {
     return {

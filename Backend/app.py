@@ -107,6 +107,8 @@ def login():
         else:
             flash('invalid credentials. please try again.')
             return redirect(url_for('account.login'))
+        
+# TODO: consider putting allergen profile handling informaiton in a separate python file
 
 @app.route('/addAllergy', methods=['POST'])
 def add_allergy():
@@ -124,6 +126,25 @@ def add_allergy():
             db.commit()
 
 #remove allergy
+
+"""
+@app.route('/removeAllergy', methods=['POST'])
+def remove_allergy():
+    username = request.form['username']
+    allergies = request.form.get['allergies']
+
+ # not really sure how to change this code right now   
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+
+    if user_id == user[0]:
+        for allergy in allergies:
+            cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies))
+            db.commit()
+"""
 
 
 
