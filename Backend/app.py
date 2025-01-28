@@ -118,13 +118,13 @@ def add_allergy():
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
 
-    if user_id = user[0]:
+    if user_id == user[0]:
         for allergy in allergies:
-            cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies)
+            cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies))
             db.commit()
 
 #remove allergy
-#
+
 
 
 if __name__ == '__main__':
