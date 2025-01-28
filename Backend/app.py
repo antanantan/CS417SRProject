@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, g, send_from_directory
+from flask import Flask, jsonify, g, send_from_directory, request, url_for, redirect, session
 from flask_cors import CORS
 import os, sqlite3, json
 from flask_bcrypt import Bcrypt
@@ -27,7 +27,7 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-def create_db():
+def create_db():    
     os.makedirs(os.path.dirname(DATABASE), exist_ok=True) 
     db = sqlite3.connect(DATABASE)
     cursor = db.cursor()
@@ -108,8 +108,23 @@ def login():
             flash('invalid credentials. please try again.')
             return redirect(url_for('account.login'))
 
+@app.route('/addAllergy', methods=['POST'])
+def add_allergy():
+    username = request.form['username']
+    allergies = request.form.get['allergies']
+    
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
 
+    if user_id = user[0]:
+        for allergy in allergies:
+            cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies)
+            db.commit()
 
+#remove allergy
+#
 
 
 if __name__ == '__main__':
