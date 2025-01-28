@@ -30,8 +30,29 @@ import axios from 'axios';
 export default {
   data() {
     return {
-      mapURL: "/src/assets/map.html" 
+      zip: '', 
+      location: null,
+      error: null,
     };
+  },
+  methods: {
+    async submitZipCode() {
+      try {
+        const response = await axios.post('http://localhost:5000/location', {
+          zip_code: this.zipCode,
+        });
+
+        if (response.data.latitude) {
+          this.location = response.data;  
+          this.error = null;  
+        } else {
+          this.error = 'Invalid ZIP code or location not found.';
+        }
+      } catch (err) {
+        this.error = 'Error communicating with the backend.';
+        console.error(err);
+      }
+    },
   },
 };
 </script>

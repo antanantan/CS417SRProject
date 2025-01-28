@@ -2,11 +2,14 @@ import folium
 from geopy.geocoders import Nominatim
 from flask import Flask, request, jsonify
 
+# for some reason you have to be in the main directory for it to work. will fix that functionality eventually
+
 # restricting it to the United States for now to keep our initial functionality small
 def get_coordinates(zip_code, country='US'):
     geolocator = Nominatim(user_agent="map")
     location = geolocator.geocode(f"{zip_code}, {country}")
     if location:
+        print(location.raw)
         return location.latitude, location.longitude
     else:
         print("Invalid Zip Code.")

@@ -5,12 +5,12 @@ User Profile
   - allow user to create allergen profile and store information in a database. ensure that the allergen information is unique for each user.
 
 Allergen Profile
-  - import menu information into the menu interface
+  - import menu information into the menu interface **(Y)**
   - get allergen profile to filter 
 
 Location Information
-  - allow map page to accept geographical information from device and display that information. 
+  - allow map page to accept geographical information from device and display that information. **(E)**
 
 Miscellaneous
   - remedy security issues as indicated on github!
-  - fix disclaimer not closing for some reason (i feel like that's an Erin issue because it's her child)
+  - fix disclaimer not closing for some reason **(A)**
