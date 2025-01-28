@@ -98,8 +98,7 @@ const continueAsGuest = () => {
         <RouterLink
           to="/"
           class="text-blue-500 hover:underline"
-          @click.prevent="continueAsGuest"
-        >
+          @click.prevent="continueAsGuest">
           Continue as Guest
         </RouterLink>
       </div>

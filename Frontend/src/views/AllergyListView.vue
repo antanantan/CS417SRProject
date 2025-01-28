@@ -1,14 +1,17 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-import {useRouter } from "vue-router";
+import {useRouter} from "vue-router";
+import Modal from "@/components/Disclaimer.vue"
 
 const router = useRouter();
+
 </script>
 
 
-<!--NOTE: the disclaimer CLOSES on the test page, but not on this page. why won't it close-->
+<!--TODO: fix disclaimer why no work-->
 <template>
-  <Modal @close="closeModal"/>
+  <Modal v-show="isModalVisible" @close="closeModal"/>
+
   <h1>Step 1: Select your allergies/dietary restrictions</h1>
       <div>
     <ul>
@@ -57,6 +60,8 @@ const router = useRouter();
   <Card></Card>
 </template>
 
+<!--TODO: we need to take this information and send it to the backend and cross-check it with a mock menu?
+          or we really need to figure out where to get a comprehensive allergen database-->
 
 <script>
 export default {
@@ -143,7 +148,10 @@ export default {
     this.filteredAllergies = this.allergies;
   }
 }
+
+
 </script>
+
 
 <style scoped>
 .allergy-container {
@@ -171,6 +179,4 @@ export default {
 }
 </style>
 
-<!--TODO: implement checklist feature-->
 <!--reference: https://www.google.com/search?q=how+to+implement+a+checklist+in+vue&sca_esv=2100fb941db67f3a&ei=6ZkqZ8fcKLqHptQPxqS4kAE&ved=0ahUKEwiH9ZbYnMaJAxW6g4kEHUYSDhIQ4dUDCBA&uact=5&oq=how+to+implement+a+checklist+in+vue&gs_lp=Egxnd3Mtd2l6LXNlcnAiI2hvdyB0byBpbXBsZW1lbnQgYSBjaGVja2xpc3QgaW4gdnVlMgUQIRigATIFECEYoAEyBRAhGKABMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwVIwQ5QqglYsQpwBHgBkAEAmAGDAaABpAKqAQMyLjG4AQPIAQD4AQGYAgegArECwgIKEAAYsAMY1gQYR8ICBhAAGBYYHsICCxAAGIAEGIYDGIoFwgIIEAAYgAQYogSYAwCIBgGQBgiSBwM2LjGgB8YV&sclient=gws-wiz-serp-->
-<!--there are probably much nicer ways to do this-->
