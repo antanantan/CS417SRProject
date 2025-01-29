@@ -14,3 +14,9 @@ Location Information
 Miscellaneous
   - remedy security issues as indicated on github!
   - fix disclaimer not closing for some reason **(A)**
+
+
+E's Notes
+  - can confirm that data is being passed upon creating an account and logging in via console log, and i changed the routing in the front and backend to transfer to the profile, but regardless of whether an account is associated or not, the website will still proceed with bringing the user to the profile page, despite exceptions being listed in the backend. i have no idea how to fix this though
+  - we have to figure out how to use axios to pass HTTP requests from vue into flask
+  - update (1/29): it's a little bit messy (the map is gone from the location view because i'm trying to get the form to work with the backend) but you can still access the page, nothing is visually missing it's just the functionality that's absent

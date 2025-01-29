@@ -1,15 +1,16 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
 const email = ref('');
 const password = ref('');
 const router = useRouter();
 
 const handleLogin = () => {
-  // Replace with actual login logic
+  // Replace with actual login logic (it's in the backend i'm not sure how to push that)
   console.log('Creating Account With ', email.value, password.value);
-  // Navigate to a different route if needed
+  router.push('/profile'); 
 };
 
 const continueAsGuest = () => {

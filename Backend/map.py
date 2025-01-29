@@ -1,6 +1,7 @@
 import folium
 from geopy.geocoders import Nominatim
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 # for some reason you have to be in the main directory for it to work. will fix that functionality eventually
 
