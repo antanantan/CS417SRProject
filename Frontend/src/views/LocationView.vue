@@ -58,7 +58,7 @@ export default {
 
 <style>
 h1 {
-  font-size: large;
+  font-size: xx-large;
   text-align: center;
 }
 </style>

@@ -3,15 +3,10 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
+const username = ref('');
 const email = ref('');
 const password = ref('');
 const router = useRouter();
-
-const handleLogin = () => {
-  // Replace with actual login logic (it's in the backend i'm not sure how to push that)
-  console.log('Creating Account With ', email.value, password.value);
-  router.push('/profile'); 
-};
 
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
@@ -26,13 +21,13 @@ const continueAsGuest = () => {
     <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
       <div class="text-center mb-6">
       </div>
-      <form @submit.prevent="handleLogin">
+      <form @submit.prevent="register">
         <div class="mb-4">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="username" required>
             Username
           </label>
           <input
-            v-model="username"
+            v-model="new_username"
             type="text"
             id="username"
             placeholder="Enter a username"
@@ -41,11 +36,11 @@ const continueAsGuest = () => {
         </div>
 
         <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="email" required>
             Email
           </label>
           <input
-            v-model="email"
+            v-model="new_email"
             type="text"
             id="email"
             placeholder="Enter your email"
@@ -54,19 +49,11 @@ const continueAsGuest = () => {
         </div>
 
         <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="password" required>
             Password
           </label>
-          <input
-            v-model="password"
-            type="password"
-            id="password"
-            placeholder="Enter a password"
-            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
-          />
+          <input v-model="new_password" type="password" id="password" placeholder="Enter a password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"/>
         </div>
-
-        
 
         <button
           type="submit"
@@ -75,24 +62,6 @@ const continueAsGuest = () => {
           Create Account
         </button>
       </form>
-      
-<!--reference: https://www.shecodes.io/athena/53677-how-to-create-a-login-page-with-form-validation-using-html-css-and-javascript-->
-      <!--script type="text/javascript">
-        const form = document.querySelector('form');
-        form.addEventListener('submit', function(event) {
-            event.preventDefault(); // prevent default form submission behavior
-
-            // validate username and password
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            if (username === 'myusername' && password === 'mypassword') {
-                alert('Login successful!');
-            } else {
-                alert('Username or password incorrect. Please try again.');
-            }
-        });
-    </script-->
-<!--maybe we have to implement some js to confirm or deny the user access-->
 
       <div class="text-center mt-4">
         <span class="text-gray-500 mx-2">or</span>
@@ -106,6 +75,37 @@ const continueAsGuest = () => {
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  data() {
+    return {
+      new_username: '',
+      new_email: '',
+      new_password: '',
+      errorMessage: '',
+    };
+  },
+  methods: {
+    async register() {
+      try {
+        const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
+
+        if (response.data.message === 'account created successfully.') {
+          this.$router.push('/profile');  
+        }
+      } 
+      catch (error) {
+        if (error.response && error.response.data) {
+          this.errorMessage = error.response.data.message || 'something went wrong';
+        }
+      }
+    },
+  },
+};
+
+</script>
+
 
 <style>
 
