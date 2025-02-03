@@ -2,6 +2,7 @@ from flask import Flask, flash, jsonify, g, redirect, request, send_from_directo
 from flask_cors import CORS
 import os, sqlite3, json
 from flask_bcrypt import Bcrypt
+import base64
 
 # NOTE: testing app.py functionality with map inputs
 import folium
@@ -71,40 +72,34 @@ def get_data(username):
     return json.loads(result[0]) if result else None
   
 
+if not os.path.exists('static'):
+    os.makedirs('static')
 
-# NOTE: for testing backend functionality with the map function. i don't really know what i'm doing
+# NOTE: for testing backend functionality with the map function. will have to deal with exceptions once basic functionality is go
+@app.route('/location', methods=['POST'])
+def create_map(country='US'):
+    zip_code = request.json.get('zip_code')
 
-def get_coordinates(zip_code, country='US'):
-    geolocator = Nominatim(user_agent="map")
+    if not zip_code:
+        return jsonify({"error": "please enter a valid zip code"}), 400
+
+    geolocator = Nominatim(user_agent="app")
     location = geolocator.geocode(f"{zip_code}, {country}")
-    if location:
-        print(location.raw)
-        return location.latitude, location.longitude
-    else:
-        print("Invalid Zip Code.")
-        return None
     
-@app.route('/location')
-def create_map():
-    data = request.get_json()
-    zip_code = data.get('zip_code')
-    coordinates = get_coordinates(zip_code)
-    if coordinates:
-        latitude, longitude = coordinates
-        m = folium.Map(location=[latitude, longitude], zoom_start=12)
+    map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
         
-        folium.Marker([latitude, longitude]).add_to(m)
+    folium.Marker([location.latitude, location.longitude]).add_to(map)
+
+    map_path = os.path.join('static', 'map.html')
+
+    map.save(map_path)
+    print("request received!")
+
+    response = jsonify({"map_url": "/static/map.html"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
         
-        m.save("Frontend/src/assets/map.html")
-        print("yay success!")
-        
-        return jsonify({"map_url": "Frontend/src/assets/map.html"})
+    return response
 
-
-
-
-
-# TODO: allow the site to accept zip code input via form, save that information to the user's profile, and generate a new map based on the user's specified location
 
 @app.route('/create', methods=['GET', 'POST'])
 def register():
