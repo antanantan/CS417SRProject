@@ -1,8 +1,21 @@
 Things to Do! Listed in Order of Priority
 
-  - create user profile and store information in a database. users need to be able to log in and out of the application.
+User Profile
+  - create user profile and store information in a database. users need to be able to log in and out of the application. **E (Next Task)**
   - allow user to create allergen profile and store information in a database. ensure that the allergen information is unique for each user.
-  - import menu information into the menu interface
+
+Allergen Profile
+  - import menu information into the menu interface **(Y)**
+  - get allergen profile to filter 
+
+Location Information
+  - ~~allow map page to accept geographical information from device and display that information. ~~ Done! Just need to make it look pretty
+
+Miscellaneous
   - remedy security issues as indicated on github!
-  - allow map page to accept geographical information from device and display that information. 
-  - fix disclaimer not closing for some reason (i feel like that's an Erin issue because it's her child)
+  - fix disclaimer not closing for some reason **(A)**
+
+
+E's Notes
+  - can confirm that data is being passed upon creating an account and logging in via console log, and i changed the routing in the front and backend to transfer to the profile, but regardless of whether an account is associated or not, the website will still proceed with bringing the user to the profile page, despite exceptions being listed in the backend. i have no idea how to fix this though
+  - map functionality complete! use the backend as a framework for future HTTP/Axiod requests.
