@@ -8,11 +8,13 @@ import axios from 'axios';
 
 <br>
 
+<!--TODO: allow for session to grab user data from the session and display it on the profile.-->
+{{ session.username }}
+
 <button @click="logout" style="border-width: 10px; color: red;">Test Logout</button>
 
 </template>
 
-<!--TODO: allow for session to grab user data from the session and display it on the profile.-->
 
 <script>
 export default {
