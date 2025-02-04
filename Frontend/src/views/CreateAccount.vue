@@ -3,9 +3,6 @@ import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
-const username = ref('');
-const email = ref('');
-const password = ref('');
 const router = useRouter();
 
 const continueAsGuest = () => {
@@ -92,7 +89,7 @@ export default {
         const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
 
         if (response.data.message === 'account created successfully.') {
-          this.$router.push('/profile');  
+          this.$router.push('/login');  
         }
       } 
       catch (error) {

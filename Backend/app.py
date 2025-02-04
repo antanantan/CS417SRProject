@@ -17,6 +17,9 @@ BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 print(BASE_DIR)
 DATABASE = os.path.join(BASE_DIR, "profiles.db")
 
+if not os.path.exists('static'):
+    os.makedirs('static')
+
 @app.route('/')
 
 # function to get database connection
@@ -42,7 +45,6 @@ def create_db():
     ''')
     db.commit()
     db.close()
-
 create_db()
 
 @app.teardown_appcontext
@@ -50,9 +52,6 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
-
-if not os.path.exists('static'):
-    os.makedirs('static')
 
 # function for handling location feature (DONE)
 @app.route('/location', methods=['POST'])
@@ -80,6 +79,9 @@ def create_map(country='US'):
     return response
 
 
+# TODO (E): **FIX THIS**
+
+
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     data = request.get_json()
@@ -91,62 +93,48 @@ def register():
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+
     existing_user = cursor.fetchone()
-    
     if existing_user:
         db.close()
-        return jsonify({"message": "username already taken. please choose a different one."})
+        return jsonify({"message": "username already taken. please choose a different one."}), 401
 
     try:
         cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (username, hashed_password, email))
         db.commit()
         db.close()
-        return jsonify ({"message": "account created successfully."})
+        return jsonify ({"message": "account created successfully."}), 200
     except sqlite3.Error:   
         db.close()
         return jsonify ({"message": "error."})
-    
-
-"""
-may or may not use this script
-def insert_data(username, form_data):
-    db = sqlite3.connect(DATABASE)
-    cursor = db.cursor()
-    form_data_json = json.dumps(form_data)  
-    cursor.execute('''
-        INSERT OR REPLACE INTO form_data (username, form_data)
-        VALUES (?, ?)
-    ''', (username, form_data_json))
-    db.commit()
-    db.close()
-"""
-
 
 
 @app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
 
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-        user = cursor.fetchone()
-        db.close()  
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    db.close()  
 
-        if user:
-            stored_password_hash = user[2] 
-            if bcrypt.check_password_hash(stored_password_hash, password):
-                session['username'] = username  
-                return redirect("/profile")  
-            else:
-                flash('invalid credentials. please try again.')
-                return redirect("/login") 
+    if user:
+        stored_password_hash = user[2] 
+        if bcrypt.check_password_hash(stored_password_hash.strip("'"), password):
+            session['username'] = username  
+            return jsonify ({"message": "user logged in successfully."}), 200
         else:
-            flash('username not found. please register first.')
-            return redirect("/create")
+            return jsonify ({"message": "incorrect password."}), 401
+    else:
+        flash("username not found. please register first.")
+        return jsonify ({"message": 'username not found. please register first.'}), 404
         
+
+
+
 
 # TODO: consider putting allergen profile handling information in a separate python file
 
@@ -160,12 +148,12 @@ def add_allergy():
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
 
-    if user_id == user[0]:
+    if user == user[0]:
         for allergy in allergies:
             cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies))
             db.commit()
 
-#remove allergy
+# remove allergy
 
 """
 @app.route('/remove_allergy', methods=['POST'])

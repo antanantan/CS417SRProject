@@ -1,5 +1,6 @@
 <script setup>
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 const router = useRouter();
 
 const goToForgotPassword = () => {
@@ -9,9 +10,11 @@ const goToForgotPassword = () => {
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
 };
-</script>
 
-<!--ref: https://medium.com/@karthikreddy17/building-a-secure-login-system-with-flask-and-vue-js-a-step-by-step-guide-5cc1e4fd7a15-->
+const profile = () => {
+  router.push('/profile'); 
+};
+</script>
 
 <template>
   <div class="flex items-center justify-center min-h-screen bg-gray-100">
@@ -29,14 +32,14 @@ const continueAsGuest = () => {
           <label class="block text-gray-700 text-sm font-bold mb-2" for="username">
             Username
           </label>
-          <input v-model="username" type="text" id="username" placeholder="Enter your username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required/>
+          <input v-model="current_username" type="text" id="username" placeholder="Enter your username" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required/>
         </div>
 
         <div class="mb-6">
           <label class="block text-gray-700 text-sm font-bold mb-2" for="password">
             Password
           </label>
-          <input v-model="password" type="password" id="password" placeholder="Enter your password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required/>
+          <input v-model="current_password" type="password" id="password" placeholder="Enter your password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500" required/>
         </div>
 
         <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 focus:outline-none focus:bg-green-700">
@@ -64,26 +67,26 @@ const continueAsGuest = () => {
 </template>
 
 <script>
-import axios from 'axios';
-import { errorMessages } from 'vue/compiler-sfc';
-
 export default {
   data() {
     return {
-      username_current: '',
-      password_current: '',
+      current_username: '',
+      current_password: '',
       errorMessage: '',
     };
   },
   methods: {
     async login() {
       try {
-        const response = await axios.post('http://127.0.0.1:5000/login', {username: username_current, password: password_current});
+        const response = await axios.post('http://127.0.0.1:5000/login', {username: this.current_username, password: this.current_password});
         localStorage.setItem('access_token', response.data.access_token);
-        console.log('logging in with', username.value, password.value);
-        this.$router.push({ name: 'Profile' }); 
+
+        if (response.data.message === "user logged in successfully.") {
+          console.log("logging in as", username.value);
+          this.$router.push("/profile");
+        }
       } catch (error) {
-        this.errorMessage = error.response ? error.response.data.message : 'an error occurred.';
+        this.errorMessage = error.response ? error.response.data.message : 'something went wrong.';
       }
     }
   }
