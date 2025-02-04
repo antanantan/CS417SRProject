@@ -2,11 +2,92 @@
 import Card from '@/components/Steps_Bottom.vue';
 import {useRouter} from "vue-router";
 import Modal from "@/components/Disclaimer.vue"
-
+import { ref, computed } from 'vue';
 const router = useRouter();
 
-</script>
+const isModalVisible = ref(true);
+const closeModal = (closeandNavigate) => {
+  isModalVisible.value = false;
+  if (closeandNavigate){ //only navs if disagree stupid { } messed me up for so long
+    router.push('/');
+  }
+};
 
+const allergies = ref([
+  { id: 1, name: 'Milk', severity: '', selected: false },
+  { id: 2, name: 'Eggs', severity: '', selected: false },
+  { id: 3, name: 'Peanuts', severity: '', selected: false },
+  { id: 4, name: 'Tree nuts', severity: '', selected: false },
+  { id: 5, name: 'Sesame', severity: '', selected: false },
+  { id: 6, name: 'Soy', severity: '', selected: false },
+  { id: 7, name: 'Fish', severity: '', selected: false },
+  { id: 8, name: 'Shellfish', severity: '', selected: false },
+  { id: 9, name: 'Wheat', severity: '', selected: false },
+  { id: 10, name: 'Triticale', severity: '', selected: false },
+  { id: 11, name: 'Celery', severity: '', selected: false },
+  { id: 12, name: 'Carrot', severity: '', selected: false },
+  { id: 13, name: 'Avocado', severity: '', selected: false },
+  { id: 14, name: 'Bell Pepper', severity: '', selected: false },
+  { id: 15, name: 'Potato', severity: '', selected: false },
+  { id: 16, name: 'Pumpkin', severity: '', selected: false },
+  { id: 17, name: 'Mushroom', severity: '', selected: false },
+  { id: 18, name: 'Onion', severity: '', selected: false },
+  { id: 19, name: 'Mustard', severity: '', selected: false },
+  { id: 20, name: 'Spices', severity: '', selected: false },
+  { id: 21, name: 'Gluten', severity: '', selected: false }
+]);
+
+//search functionality
+const searchQuery = ref("");
+const filteredAllergies = computed(() => {
+  return allergies.value
+    ? allergies.value.filter(a =>
+    a.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
+    : [];
+});
+
+// Selecting allergies 
+const toggleRadio = (allergy, severity) => {
+  allergy.severity = allergy.severity === severity ? "" : severity; 
+};
+
+const applyAllAllergies = () => {
+  allergies.value.forEach(allergy => {
+    if (allergy.severity) {
+      allergy.selected = true;
+    }
+  });
+};
+
+const resetAllAllergies = () => {
+  allergies.value.forEach(allergy => {
+    allergy.severity = "";
+    allergy.selected = false;
+  });
+};
+
+const searchIndex = ref(0);
+const highlightRow = ref(0);
+
+const searchNext = () => {
+  if (searchIndex.value < filteredAllergies.value.length - 1) {
+    searchIndex.value++;
+  } else {
+    searchIndex.value = 0; // loop back
+  }
+  highlightRow.value = searchIndex.value;
+};
+
+const searchPrev = () => {
+  if (searchIndex.value > 0) {
+    searchIndex.value--;
+  } else {
+    searchIndex.value = filteredAllergies.value.length - 1; // loop back
+  }
+  highlightRow.value = searchIndex.value;
+};
+
+</script>
 
 <!--TODO: fix disclaimer why no work-->
 <template>
@@ -14,26 +95,28 @@ const router = useRouter();
 
   <h1>Step 1: Select your allergies/dietary restrictions</h1>
       <div>
-    <ul>
-      <li v-for="(item, index) in items" :key="index">
-        <input type="checkbox" v-model="item.checked">
-        <label>{{ item.label }}</label>
+    <ul v-if="filteredAllergies.length">
+      <li v-for="(allergy, index) in filteredAllergies" :key="index">
       </li>
     </ul>
+    <p v-else>No allergies found</p>
   </div>
 
   <div class="allergy-container">
     <div class="controls">
-      <input class="search-box" v-model="searchQuery" @input="filterAllergies" placeholder="Search allergies...">
+      <input class="search-box" v-model="searchQuery" placeholder="Search allergies...">
       <button class="btn" @click="searchPrev">Prev</button>
       <button class="btn" @click="searchNext">Next</button>
-      <span>{{ searchIndex + 1 }}/{{ filteredAllergies.length }}</span>
+      <span v-if="filteredAllergies.length">{{ searchIndex + 1 }}/{{ filteredAllergies?.length || 0 }}</span> 
+      <span v-else>No Allergies found</span>
     </div>
     <div class="actions">
       <button class="btn apply" @click="applyAllAllergies">Apply All</button>
       <button class="btn reset" @click="resetAllAllergies">Reset All</button>
     </div>
-    <p>{{ countSelectedAllergies }} allergies applied</p>
+
+    <p>{{ allergies.filter(a => a.selected).length }} allergies applied</p>
+
     <table>
       <thead>
         <tr>
@@ -44,14 +127,14 @@ const router = useRouter();
           <th>Strong</th>
         </tr>
       </thead>
-      <tbody>
+      <tbody v-if="filteredAllergies.length">
         <tr v-for="(allergy, index) in filteredAllergies" :key="allergy.id"
         :class="{ highlighted: index === highlightRow }">
           <td>{{ allergy.name }}</td>
-          <td><input type="radio" :value="'intolerance'" v-model="allergy.severity" @click="toggleRadio(allergy, 'intolerance')"></td>
-          <td><input type="radio" :value="'mild'" v-model="allergy.severity" @click="toggleRadio(allergy, 'mild')"></td>
-          <td><input type="radio" :value="'moderate'" v-model="allergy.severity" @click="toggleRadio(allergy, 'moderate')"></td>
-          <td><input type="radio" :value="'strong'" v-model="allergy.severity" @click="toggleRadio(allergy, 'strong')"></td>
+          <td><input type="radio" value="'intolerance'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"</td>
+          <td><input type="radio" value="'mild'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"></td>
+          <td><input type="radio" value="'moderate'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"></td>
+          <td><input type="radio" value="'strong'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"></td>
         </tr>
       </tbody>
     </table>
@@ -62,100 +145,11 @@ const router = useRouter();
 
 <!--TODO: we need to take this information and send it to the backend and cross-check it with a mock menu?
           or we really need to figure out where to get a comprehensive allergen database-->
-
-<script>
-export default {
-  data() {
-    return {
-      allergies: [
-        { id: 1, name: 'Milk', severity: '', selected: false },
-        { id: 2, name: 'Eggs', severity: '', selected: false },
-        { id: 3, name: 'Peanuts', severity: '', selected: false },
-        { id: 4, name: 'Tree nuts', severity: '', selected: false },
-        { id: 5, name: 'Sesame', severity: '', selected: false },
-        { id: 6, name: 'Soy', severity: '', selected: false },
-        { id: 7, name: 'Fish', severity: '', selected: false },
-        { id: 8, name: 'Shellfish', severity: '', selected: false },
-        { id: 9, name: 'Wheat', severity: '', selected: false },
-        { id: 10, name: 'Triticale', severity: '', selected: false },
-        { id: 11, name: 'Celery', severity: '', selected: false },
-        { id: 12, name: 'Carrot', severity: '', selected: false },
-        { id: 13, name: 'Avocado', severity: '', selected: false },
-        { id: 14, name: 'Bell Pepper', severity: '', selected: false },
-        { id: 15, name: 'Potato', severity: '', selected: false },
-        { id: 16, name: 'Pumpkin', severity: '', selected: false },
-        { id: 17, name: 'Mushroom', severity: '', selected: false },
-        { id: 18, name: 'Onion', severity: '', selected: false },
-        { id: 19, name: 'Mustard', severity: '', selected: false },
-        { id: 20, name: 'Spices', severity: '', selected: false },
-        { id: 21, name: 'Gluten', severity: '', selected: false }
-      ],
-      searchQuery: '',
-      filteredAllergies: [],
-      highlightRow: 0,
-      searchIndex: 0
-    };
-  },
-  computed: {
-    countSelectedAllergies() {
-      return this.allergies.filter(a => a.severity).length;
-    }
-  },
-  methods: {
-    applyAllAllergies() {
-      this.allergies.forEach(allergy => {
-        if (allergy.severity) {
-          allergy.selected = true;
-        }
-      });
-    },
-    resetAllAllergies() {
-      this.allergies.forEach(allergy => {
-        allergy.severity = '';
-        allergy.selected = false;
-      });
-    },
-    filterAllergies() {
-      this.filteredAllergies = this.allergies.filter(a => a.name.toLowerCase().includes(this.searchQuery.toLowerCase()));
-      this.highlightRow = 0;
-      this.searchIndex = 0;
-    },
-    searchNext() {
-      if (this.searchIndex < this.filteredAllergies.length - 1) {
-        this.searchIndex++;
-      } else {
-        this.searchIndex = 0; // Loop back to the first item
-      }
-      this.highlightRow = this.searchIndex;
-    },
-    searchPrev() {
-      if (this.searchIndex > 0) {
-        this.searchIndex--;
-      } else {
-        this.searchIndex = this.filteredAllergies.length - 1; // Loop back to the last item
-      }
-      this.highlightRow = this.searchIndex;
-    },
-    toggleRadio(allergy, severity) {
-      if (allergy.severity === severity) {
-        allergy.severity = ''; // clear the selection
-      } else {
-        allergy.severity = severity; // select the new value
-      }
-    }
-  },
-  mounted() {
-    this.filteredAllergies = this.allergies;
-  }
-}
-
-
-</script>
-
-
+ 
 <style scoped>
 .allergy-container {
   padding: 20px;
+  padding-bottom: 100px;
 }
 .controls, .actions {
   margin-bottom: 10px;

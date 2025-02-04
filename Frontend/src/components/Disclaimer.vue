@@ -25,23 +25,26 @@
           developers are not directly responsible for injuries that occur
           as a result of the meal preparation at the eatery.
 
-        <button type="button" class="btn-green" @click="close">I Agree</button>
-        <RouterLink class="btn-green":to="'/'">I Disagree</RouterLink>
+        <button type="button" class="btn-green" @click="close(false)">I Agree</button>
+        <button class="btn-green" @click="close(true)">I Disagree</button> <!-- Using Routerlink doesn't close the modal before rerouting which may lead to future issues-->
         </slot>
       </footer>
     </div>
   </div>
 </template>
 
-<script>
-export default {
-    name: 'Modal',
-    methods: {
-      close() {
-        this.$emit('close');
-      },
-    },
-  };
+<script setup>
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
+
+const emit = defineEmits(['close']); 
+
+const close = (closeandNavigate) => {
+  emit('close', closeandNavigate); // Sends true if "I disagree was clicked and false if "I agree" was clicked
+};
+
+
 </script>
 
 <style>
