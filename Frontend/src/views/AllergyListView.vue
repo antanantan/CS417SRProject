@@ -7,8 +7,6 @@ const router = useRouter();
 
 </script>
 
-
-<!--TODO: fix disclaimer why no work-->
 <template>
   <Modal v-show="isModalVisible" @close="closeModal"/>
 

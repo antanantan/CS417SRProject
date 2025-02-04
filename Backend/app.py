@@ -1,10 +1,8 @@
-from flask import Flask, flash, jsonify, g, redirect, request, send_from_directory, session, url_for
+from flask import Flask, flash, jsonify, g, request, session
 from flask_cors import CORS
-import os, sqlite3, json
+import os, sqlite3, folium
 from flask_bcrypt import Bcrypt
-import folium
 from geopy.geocoders import Nominatim
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 
 
 app = Flask(__name__)
@@ -78,10 +76,7 @@ def create_map(country='US'):
         
     return response
 
-
-# TODO (E): **FIX THIS**
-
-
+# function for handling account creation
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     data = request.get_json()
@@ -108,7 +103,7 @@ def register():
         db.close()
         return jsonify ({"message": "error."})
 
-
+# function for handling login
 @app.route('/login', methods=['POST'])
 def login():
     data = request.get_json()
@@ -132,12 +127,43 @@ def login():
         flash("username not found. please register first.")
         return jsonify ({"message": 'username not found. please register first.'}), 404
         
+# function ot handle user logout
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    session.clear()
+    return jsonify ({"message": "you have been logged out."}), 200
+
+
+# TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
+#       not the most secure method right now but at least that page will have something to do on it
+"""
+@app.route('/password_reset', methods=['POST'])
+def password_reset():
+    data = request.get_json()
+    email = data.get('email')
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    db.close()  
+
+    if user:
+        stored_password_hash = user[2] 
+        new_password = flash("enter new password")
+        password = new_password
+    else:
+        flash("email not found.")
+        return jsonify ({"message": 'email not found.'}), 404
+"""
 
 
 
 
-# TODO: consider putting allergen profile handling information in a separate python file
 
+
+
+# TODO: link allergen information to profile 
 @app.route('/add_allergy', methods=['POST'])
 def add_allergy():
     username = request.form['username']

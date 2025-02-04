@@ -25,7 +25,7 @@ const profile = () => {
       Or <a href="/create" style="color:palevioletred">Create a New Account</a>
       <br>
 
-<!--marks beginning of login implementation-->
+
 
       <form @submit.prevent="login">
         <div class="mb-4">
@@ -46,6 +46,8 @@ const profile = () => {
           Sign In
         </button>
       </form>
+
+      
 
       <div class="text-center mt-4">
         <RouterLink

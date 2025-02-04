@@ -2,16 +2,6 @@
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
 
-const email = ref('');
-const password = ref('');
-const router = useRouter();
-
-const handleLogin = () => {
-  // Replace with actual login logic
-  console.log('Logging in with', email.value, password.value);
-  // Navigate to a different route if needed
-};
-
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
 };
@@ -31,7 +21,7 @@ const continueAsGuest = () => {
             v-model="email"
             type="text"
             id="email"
-            placeholder="Enter your email or username"
+            placeholder="Enter the email associated with your account."
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
           />
         </div>
@@ -47,6 +37,33 @@ const continueAsGuest = () => {
     </div>
   </div>
 </template>
+
+<script>
+export default {
+  data() {
+    return {
+      new_email: '',
+      errorMessage: '',
+    };
+  },
+  methods: {
+    async register() {
+      try {
+        const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
+
+        if (response.data.message === 'account created successfully.') {
+          this.$router.push('/login');  
+        }
+      } 
+      catch (error) {
+        if (error.response && error.response.data) {
+          this.errorMessage = error.response.data.message || 'something went wrong';
+        }
+      }
+    },
+  },
+};
+</script>
 
 <style scoped>
 </style>
