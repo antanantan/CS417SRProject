@@ -66,8 +66,6 @@ const resetAllAllergies = () => {
   });
 };
 
-
-=======
 const searchIndex = ref(0);
 const highlightRow = ref(0);
 
