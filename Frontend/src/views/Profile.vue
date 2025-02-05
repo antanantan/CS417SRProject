@@ -5,11 +5,9 @@ import axios from 'axios';
 
 <template>
 
-
-<br>
-
-<!--TODO: allow for session to grab user data from the session and display it on the profile.-->
-{{ session.username }}
+<div v-if="username">
+Username: {{ username }}
+</div>
 
 <button @click="logout" style="border-width: 10px; color: red;">Test Logout</button>
 
@@ -18,6 +16,14 @@ import axios from 'axios';
 
 <script>
 export default {
+  data() {
+    return {
+      username: null,
+    };
+  },
+  created() {
+    this.profile();
+  },
   methods: {
     async logout() {
       try {
@@ -31,7 +37,22 @@ export default {
     catch (error) {
         console.error('error:', error);
     }
-    }
+    },
+    async profile() {
+      try {
+        const response = await axios.get('http://127.0.0.1:5000/profile', {withCredentials: true});
+        if (response.data && response.data.username) {
+          this.username = response.data.username;
+        } else {
+          console.error('no username', response.data);
+          this.username = null;
+        }
+      }
+      catch (error) {
+        console.error('error:', error);
+        this.username = null;
+      }
+    },
   },
 };
 </script>
