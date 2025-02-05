@@ -4,16 +4,17 @@ import Card from '@/components/Steps_Bottom.vue';
 
 <template>
   <h1>Step 2: Select Location</h1>
-
-  <form @submit.prevent="generateMap">
-      <label for="zip">ZIP/Postal Code: </label>
-      <input type="text" v-model="zip_entered" id="zip" name="zip" required/>
-      <button type="submit" style="border: 1rem; border-color: black; color:greenyellow">Submit</button>
+  <br>
+  <form @submit.prevent="generateMap" style="display: flex; justify-content: center;">
+      <label for="zip" style="font-size:large;">ZIP/Postal Code:  </label>
+      <input type="text" v-model="zip_entered" id="zip" name="zip" style="border-width: 5px; border-color: #48ab4e; border-radius:10%" required/>
+      <button type="submit">Submit</button>
     </form>
-  
-  <div v-if="loading"></div>
+  <br>
 
-  <iframe v-if="map_displayed" :src="map_displayed" width="800" height="650"></iframe>
+<div class="map_container">
+  <iframe v-if="map_displayed" :src="map_displayed"></iframe>
+</div>
 
   <Card></Card>
 </template>
@@ -27,7 +28,6 @@ export default {
     return {
       zip_entered: '', 
       map_displayed: '',
-      loading: false,
     };
   },
   methods: {
@@ -41,15 +41,11 @@ export default {
 
       try {
         const response = await axios.post('http://127.0.0.1:5000/location', {zip_code: this.zip_entered,});
-
         this.map_displayed = `http://127.0.0.1:5000${response.data.map_url}?t=${new Date().getTime()}`;  
         }
       catch (error) {
         this.error = 'error generating map.';
         console.error(error);
-      }
-      finally {
-        this.loading = false;
       }
     },
   },
@@ -60,5 +56,26 @@ export default {
 h1 {
   font-size: xx-large;
   text-align: center;
+}
+button {
+  border-width: 5px; 
+  border-color: darkgreen; 
+  color:white;
+  border-radius: 10%;
+  background-color: chartreuse;
+}
+button:hover {
+  color: darkgreen;
+}
+.map_container {
+  display: flex;
+  justify-content: center;
+}
+iframe {
+  border-width: 1rem; 
+  border-radius: 5%;
+  border-color: #f27e9f; 
+  width: 800px;
+  height: 550px;
 }
 </style>

@@ -66,6 +66,8 @@ const resetAllAllergies = () => {
   });
 };
 
+
+=======
 const searchIndex = ref(0);
 const highlightRow = ref(0);
 
@@ -90,6 +92,7 @@ const searchPrev = () => {
 </script>
 
 <!--TODO: fix disclaimer why no work-->
+
 <template>
   <Modal v-show="isModalVisible" @close="closeModal"/>
 

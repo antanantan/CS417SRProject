@@ -1,10 +1,8 @@
-from flask import Flask, flash, jsonify, g, redirect, request, send_from_directory, session, url_for
+from flask import Flask, flash, jsonify, g, request, session
 from flask_cors import CORS
-import os, sqlite3, json
+import os, sqlite3, folium
 from flask_bcrypt import Bcrypt
-import folium
 from geopy.geocoders import Nominatim
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required
 
 
 app = Flask(__name__)
@@ -16,6 +14,9 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 print(BASE_DIR)
 DATABASE = os.path.join(BASE_DIR, "profiles.db")
+
+if not os.path.exists('static'):
+    os.makedirs('static')
 
 @app.route('/')
 
@@ -42,7 +43,6 @@ def create_db():
     ''')
     db.commit()
     db.close()
-
 create_db()
 
 @app.teardown_appcontext
@@ -50,9 +50,6 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
-
-if not os.path.exists('static'):
-    os.makedirs('static')
 
 # function for handling location feature (DONE)
 @app.route('/location', methods=['POST'])
@@ -79,7 +76,7 @@ def create_map(country='US'):
         
     return response
 
-
+# function for handling account creation
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     data = request.get_json()
@@ -91,65 +88,82 @@ def register():
     db = get_db()
     cursor = db.cursor()
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+
     existing_user = cursor.fetchone()
-    
     if existing_user:
         db.close()
-        return jsonify({"message": "username already taken. please choose a different one."})
+        return jsonify({"message": "username already taken. please choose a different one."}), 401
 
     try:
         cursor.execute("INSERT INTO users (username, password, email) VALUES (?, ?, ?)", (username, hashed_password, email))
         db.commit()
         db.close()
-        return jsonify ({"message": "account created successfully."})
+        return jsonify ({"message": "account created successfully."}), 200
     except sqlite3.Error:   
         db.close()
         return jsonify ({"message": "error."})
-    
 
-"""
-may or may not use this script
-def insert_data(username, form_data):
-    db = sqlite3.connect(DATABASE)
-    cursor = db.cursor()
-    form_data_json = json.dumps(form_data)  
-    cursor.execute('''
-        INSERT OR REPLACE INTO form_data (username, form_data)
-        VALUES (?, ?)
-    ''', (username, form_data_json))
-    db.commit()
-    db.close()
-"""
-
-
-
+# function for handling login
 @app.route('/login', methods=['POST'])
 def login():
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
 
-        db = get_db()
-        cursor = db.cursor()
-        cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-        user = cursor.fetchone()
-        db.close()  
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
+    user = cursor.fetchone()
+    db.close()  
 
-        if user:
-            stored_password_hash = user[2] 
-            if bcrypt.check_password_hash(stored_password_hash, password):
-                session['username'] = username  
-                return redirect("/profile")  
-            else:
-                flash('invalid credentials. please try again.')
-                return redirect("/login") 
+    if user:
+        stored_password_hash = user[2] 
+        if bcrypt.check_password_hash(stored_password_hash.strip("'"), password):
+            session['username'] = username  
+            return jsonify ({"message": "user logged in successfully."}), 200
         else:
-            flash('username not found. please register first.')
-            return redirect("/create")
+            return jsonify ({"message": "incorrect password."}), 401
+    else:
+        flash("username not found. please register first.")
+        return jsonify ({"message": 'username not found. please register first.'}), 404
         
+# function ot handle user logout
+@app.route('/logout', methods=['GET', 'POST'])
+def logout():
+    session.clear()
+    return jsonify ({"message": "you have been logged out."}), 200
 
-# TODO: consider putting allergen profile handling information in a separate python file
 
+# TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
+#       not the most secure method right now but at least that page will have something to do on it
+"""
+@app.route('/password_reset', methods=['POST'])
+def password_reset():
+    data = request.get_json()
+    email = data.get('email')
+
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    user = cursor.fetchone()
+    db.close()  
+
+    if user:
+        stored_password_hash = user[2] 
+        new_password = flash("enter new password")
+        password = new_password
+    else:
+        flash("email not found.")
+        return jsonify ({"message": 'email not found.'}), 404
+"""
+
+
+
+
+
+
+
+# TODO: link allergen information to profile 
 @app.route('/add_allergy', methods=['POST'])
 def add_allergy():
     username = request.form['username']
@@ -160,12 +174,12 @@ def add_allergy():
     cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
 
-    if user_id == user[0]:
+    if user == user[0]:
         for allergy in allergies:
             cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies))
             db.commit()
 
-#remove allergy
+# remove allergy
 
 """
 @app.route('/remove_allergy', methods=['POST'])
