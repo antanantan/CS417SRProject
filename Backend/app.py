@@ -1,8 +1,9 @@
 from flask import Flask, flash, jsonify, g, request, session
 from flask_cors import CORS
-import os, sqlite3, folium
+import os, sqlite3, folium, pandas
 from flask_bcrypt import Bcrypt
 from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
 
 
 app = Flask(__name__)
@@ -51,7 +52,7 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-# function for handling location feature (DONE)
+# function for handling zip code input
 @app.route('/location', methods=['POST'])
 def create_map(country='US'):
     zip_code = request.json.get('zip_code')
@@ -73,8 +74,9 @@ def create_map(country='US'):
 
     response = jsonify({"map_url": "/static/map.html"})
     response.headers.add('Access-Control-Allow-Origin', '*')
-        
     return response
+# we'd have to find a database of restaurants and their coordinates!
+
 
 # function for handling account creation
 @app.route('/register', methods=['GET', 'POST'])
@@ -148,7 +150,7 @@ def profile():
         else:
             return jsonify({"message": "user not found."}), 404  
     else:
-        return jsonify({"message": "ot logged in."}), 401
+        return jsonify({"message": "not logged in."}), 401
 
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
