@@ -1,9 +1,11 @@
 from flask import Flask, flash, jsonify, g, request, session
 from flask_cors import CORS
 import os, sqlite3, folium, pandas
+from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
+from database.db_models import db
 
 
 app = Flask(__name__)
@@ -14,7 +16,8 @@ CORS(app, resources={r'/*': {'origins': '*'}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 print(BASE_DIR)
-DATABASE = os.path.join(BASE_DIR, "profiles.db")
+DATABASE = os.path.join(BASE_DIR, "database", "db.sqlite3")
+SCHEMA = os.path.join(BASE_DIR, "database", "schema.sql")
 
 if not os.path.exists('static'):
     os.makedirs('static')
@@ -33,15 +36,9 @@ def create_db():
     os.makedirs(os.path.dirname(DATABASE), exist_ok=True) 
     db = sqlite3.connect(DATABASE)
     cursor = db.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
-            password TEXT NOT NULL,
-            email TEXT NOT NULL,
-            allergy_data TEXT
-        )
-    ''')
+    # create database by reading schema.sql
+    with open(SCHEMA, "r", encoding="utf-8") as f:
+        cursor.executescript(f.read())
     db.commit()
     db.close()
 create_db()
