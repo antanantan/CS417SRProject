@@ -5,6 +5,7 @@ import Card from '@/components/Steps_Bottom.vue';
 
 <template>
     <h1>Step 3: Select Menu Items</h1>
+<!--based on whatever database we use-->
     <Card></Card>
 </template>
   

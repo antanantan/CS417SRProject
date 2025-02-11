@@ -8,7 +8,7 @@ const router = useRouter();
 const isModalVisible = ref(true);
 const closeModal = (closeandNavigate) => {
   isModalVisible.value = false;
-  if (closeandNavigate){ //only navs if disagree stupid { } messed me up for so long
+  if (closeandNavigate){
     router.push('/');
   }
 };
@@ -46,7 +46,6 @@ const filteredAllergies = computed(() => {
     : [];
 });
 
-// Selecting allergies 
 const toggleRadio = (allergy, severity) => {
   allergy.severity = allergy.severity === severity ? "" : severity; 
 };
@@ -89,12 +88,10 @@ const searchPrev = () => {
 
 </script>
 
-<!--TODO: fix disclaimer why no work-->
-
 <template>
   <Modal v-show="isModalVisible" @close="closeModal"/>
 
-  <h1>Step 1: Select your allergies/dietary restrictions</h1>
+  <h1>Step 1: Select Your Allergies/Dietary Restrictions</h1>
       <div>
     <ul v-if="filteredAllergies.length">
       <li v-for="(allergy, index) in filteredAllergies" :key="index">

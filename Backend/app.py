@@ -1,8 +1,9 @@
 from flask import Flask, flash, jsonify, g, request, session
 from flask_cors import CORS
-import os, sqlite3, folium
+import os, sqlite3, folium, pandas
 from flask_bcrypt import Bcrypt
 from geopy.geocoders import Nominatim
+from geopy.distance import geodesic
 
 
 app = Flask(__name__)
@@ -51,7 +52,7 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-# function for handling location feature (DONE)
+# function for handling zip code input
 @app.route('/location', methods=['POST'])
 def create_map(country='US'):
     zip_code = request.json.get('zip_code')
@@ -73,8 +74,9 @@ def create_map(country='US'):
 
     response = jsonify({"map_url": "/static/map.html"})
     response.headers.add('Access-Control-Allow-Origin', '*')
-        
     return response
+# we'd have to find a database of restaurants and their coordinates!
+
 
 # function for handling account creation
 @app.route('/register', methods=['GET', 'POST'])
@@ -119,7 +121,7 @@ def login():
     if user:
         stored_password_hash = user[2] 
         if bcrypt.check_password_hash(stored_password_hash.strip("'"), password):
-            session['username'] = username  
+            session['user_id'] = user[0]
             return jsonify ({"message": "user logged in successfully."}), 200
         else:
             return jsonify ({"message": "incorrect password."}), 401
@@ -127,11 +129,28 @@ def login():
         flash("username not found. please register first.")
         return jsonify ({"message": 'username not found. please register first.'}), 404
         
-# function ot handle user logout
+# function to handle user logout
 @app.route('/logout', methods=['GET', 'POST'])
 def logout():
     session.clear()
     return jsonify ({"message": "you have been logged out."}), 200
+
+# i wonder if we have to declare this every time we want to pull profile information for the user? TBA but it's here for now as a test function at least
+@app.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user_id' in session:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("SELECT username FROM users WHERE id = ?", (session['user_id'],))
+        user = cursor.fetchone()
+        db.close()
+
+        if user:
+            return jsonify({"username": user[0]}), 200 
+        else:
+            return jsonify({"message": "user not found."}), 404  
+    else:
+        return jsonify({"message": "not logged in."}), 401
 
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
