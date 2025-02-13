@@ -24,7 +24,7 @@ class AllergenGroup(db.Model):
 class Allergen(db.Model):
     __tablename__ = 'allergens'
     id = db.Column(db.Integer, primary_key=True)
-    group_id = db.Column(db.Integer, db.ForeignKey('allergen_groups.id'), nullable=False)
+    group_id = db.Column(db.Integer, db.ForeignKey('allergen_groups.id'), nullable=True)
     name = db.Column(db.String, nullable=False, unique=True)
 
     group = db.relationship('AllergenGroup', back_populates='allergens')
@@ -47,13 +47,13 @@ class Restaurant(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False)
     address = db.Column(db.String, nullable=False)
-    zipcode = db.Column(db.Integer, nullable=False)
+    zipcode = db.Column(db.String, nullable=False)
     latitude = db.Column(db.Float, nullable=False)
     longitude = db.Column(db.Float, nullable=False)
-    phone = db.Column(db.String, nullable=False)
-    category = db.Column(db.String, nullable=False)
-    price_range = db.Column(db.String, nullable=False)
-    image_filename = db.Column(db.String)
+    phone = db.Column(db.String, nullable=True)
+    category = db.Column(db.String, nullable=True)
+    price_range = db.Column(db.String, nullable=True)
+    image_filename = db.Column(db.String, nullable=True)
 
     menus = db.relationship('Menu', back_populates='restaurant', cascade="all, delete")
 
