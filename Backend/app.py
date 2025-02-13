@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!' 
 bcrypt = Bcrypt(app)
 
-CORS(app, resources={r'/*': {'origins': '*'}})
+CORS(app, resources={r'/*': {'origins': '*'}}, supports_credentials=True) # supports_credentials allows for cookies and auth headers to be passed
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 print(BASE_DIR)
@@ -136,7 +136,7 @@ def logout():
     return jsonify ({"message": "you have been logged out."}), 200
 
 # i wonder if we have to declare this every time we want to pull profile information for the user? TBA but it's here for now as a test function at least
-@app.route('/profile', methods=['GET', 'POST'])
+@app.route('/profile', methods=['GET'])
 def profile():
     if 'user_id' in session:
         db = get_db()
