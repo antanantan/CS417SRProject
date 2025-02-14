@@ -3,6 +3,7 @@ from flask_cors import CORS
 import os, sqlite3, folium, pandas
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu
