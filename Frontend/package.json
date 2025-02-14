@@ -11,10 +11,11 @@
   "dependencies": {
     "autoprefixer": "^10.4.20",
     "axios": "^1.7.7",
-    "bootstrap": "^5.0.0",
-    "bootstrap-vue": "^2.23.1",
+    "bootstrap": "^5.3.3",
+    "bootstrap-vue-next": "^0.26.26",
     "bottom-navigation-vue": "^3.3.5",
     "devextreme": "^24.1.4",
+    "devextreme-themebuilder": "^24.2.3",
     "devextreme-vue": "24.1.4",
     "postcss": "^8.4.47",
     "vue": "^3.5.12",
@@ -23,7 +24,6 @@
   "devDependencies": {
     "@iconify/vue": "^4.1.2",
     "@vitejs/plugin-vue": "^5.1.4",
-    "devextreme-themebuilder": "24.1.4",
     "tailwindcss": "^3.4.14",
     "vite": "^5.4.10"
   }
