@@ -81,10 +81,8 @@ export default {
     async login() {
       try {
         const response = await axios.post('http://127.0.0.1:5000/login', {username: this.current_username, password: this.current_password});
-        localStorage.setItem('access_token', response.data.access_token);
-
         if (response.data.message === "user logged in successfully.") {
-          console.log("logging in as", username.value);
+          console.log("logging in as", this.current_username);
           this.$router.push("/profile");
         }
       } catch (error) {

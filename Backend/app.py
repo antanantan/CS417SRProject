@@ -1,4 +1,14 @@
-from flask import Flask, flash, jsonify, g, request, session
+from flask import Flask
+app = Flask(__name__)
+app.secret_key = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!' 
+app.config.update(
+    SESSION_COOKIE_NAME='session',  # Default cookie name for sessions
+    SESSION_COOKIE_SECURE=False,    # False for local development (use HTTPS in production)
+    SESSION_COOKIE_HTTPONLY=True,   # Make sure the cookie is only accessible via HTTP (not JavaScript)
+    SESSION_COOKIE_SAMESITE='None',  # Set to 'None' to allow cross-origin requests
+)
+
+from flask import flash, jsonify, g, request, session, make_response
 from flask_cors import CORS
 import os, sqlite3, folium, pandas
 from flask_sqlalchemy import SQLAlchemy
@@ -8,13 +18,8 @@ from geopy.distance import geodesic
 from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu
 from database.seed_data import seed_db
 
-
-app = Flask(__name__)
-app.secret_key = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!' 
 bcrypt = Bcrypt(app)
-
-
-CORS(app, resources={r'/*': {'origins': '*'}}, supports_credentials=True) # supports_credentials allows for cookies and auth headers to be passed
+CORS(app, supports_credentials=True, origins="http://localhost:3000")
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -26,6 +31,11 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 # link 'db' to the app
 db.init_app(app)
 
+# initialize database
+with app.app_context():
+    db.create_all()
+    seed_db()
+
 if not os.path.exists('static'):
     os.makedirs('static')
 
@@ -33,41 +43,10 @@ if not os.path.exists('static'):
 def index():
     return "Flask App is running!"
 
-# initialize database
-with app.app_context():
-    db.create_all()
-    seed_db()
-
 # function to close database connection
 @app.teardown_appcontext
 def close_connection(exception=None):
     db.session.remove()
-
-# function for handling zip code input
-@app.route('/location', methods=['POST'])
-def create_map(country='US'):
-    zip_code = request.json.get('zip_code')
-
-    if not zip_code:
-        return jsonify({"error": "please enter a valid zip code"}), 400
-
-    geolocator = Nominatim(user_agent="app")
-    location = geolocator.geocode(f"{zip_code}, {country}")
-    
-    map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
-        
-    folium.Marker([location.latitude, location.longitude]).add_to(map)
-
-    map_path = os.path.join('static', 'map.html')
-
-    map.save(map_path)
-    print("request received!")
-
-    response = jsonify({"map_url": "/static/map.html"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
-# we'd have to find a database of restaurants and their coordinates!
-
 
 # function for handling account creation
 @app.route('/register', methods=['GET', 'POST'])
@@ -96,26 +75,50 @@ def register():
         db.session.rollback()
         return jsonify({"message": "Error creating account", "error": str(e)}), 500
 
-# function for handling login
-@app.route('/login', methods=['POST'])
+
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    data = request.get_json()
-    username = data.get('username')
-    password = data.get('password')
+    if request.method=='POST':
+        data = request.get_json()
+        username = data.get('username')
+        password = data.get('password')
 
-    if not username or not password:
-        return jsonify({"message": "Missing required fields"}), 400
+        if not username or not password:
+            return jsonify({"message": "Missing required fields"}), 400
 
-    user = User.query.filter_by(username=username).first()
+        user = User.query.filter_by(username=username).first()
 
-    if user and bcrypt.check_password_hash(user.password, password):
-        session['user_id'] = user.id  # save user id in session
-        return jsonify({"message": "user logged in successfully."}), 200
-    elif user:
-        return jsonify({"message": "Incorrect password."}), 401
+        if user and bcrypt.check_password_hash(user.password, password):
+            session['user_id'] = user.id  
+            print(f"session data: {session}")
+            return jsonify({"message": "user logged in successfully."})
+        
+        elif user:
+            return jsonify({"message": "Incorrect password."}), 401
+        else:
+            return jsonify({"message": "User not found."}), 404
+
+# function for pulling profile information from current session
+@app.route('/profile', methods=['GET'])
+def profile():
+    print(f"Cookies received: {request.cookies}")
+    user_id = session.get('user_id')
+
+    print(f"Retrieved user_id: {user_id}") 
+    if not user_id:
+        return jsonify({"message": "Not logged in."}), 401
+
+    # Retrieve the user from the database using user_id
+    user = User.query.get(int(user_id))
+
+    if user:
+        response = jsonify({"username": user.username})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response
     else:
-        flash("Username not found. Please register first.")
-        return jsonify({"message": "Username not found. Please register first."}), 404
+        return jsonify({"message": "User not found."}), 404
+
+
 
 
 # function to handle user logout
@@ -123,22 +126,6 @@ def login():
 def logout():
     session.clear()
     return jsonify ({"message": "you have been logged out."}), 200
-
-
-# i wonder if we have to declare this every time we want to pull profile information for the user? TBA but it's here for now as a test function at least
-@app.route('/profile', methods=['GET'])
-def profile():
-    user_id = session.get('user_id')  # get user id from cookie session
-    if not user_id:
-        return jsonify({"message": "Not logged in."}), 401
-
-    user = User.query.get(user_id)
-
-    if user:
-        return jsonify({"username": user.username, "email": user.email}), 200
-    else:
-        return jsonify({"message": "User not found."}), 404
-
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
 #       not the most secure method right now but at least that page will have something to do on it
@@ -162,6 +149,30 @@ def password_reset():
     else:
         return jsonify({"message": "Email not found."}), 404
 
+# function for handling zip code input
+@app.route('/location', methods=['POST'])
+def create_map(country='US'):
+    zip_code = request.json.get('zip_code')
+
+    if not zip_code:
+        return jsonify({"error": "please enter a valid zip code"}), 400
+
+    geolocator = Nominatim(user_agent="app")
+    location = geolocator.geocode(f"{zip_code}, {country}")
+    
+    map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
+        
+    folium.Marker([location.latitude, location.longitude]).add_to(map)
+
+    map_path = os.path.join('static', 'map.html')
+
+    map.save(map_path)
+    print("request received!")
+
+    response = jsonify({"map_url": "/static/map.html"})
+    response.headers.add('Access-Control-Allow-Origin', '*')
+    return response
+# we'd have to find a database of restaurants and their coordinates!
 
 # TODO: link allergen information to profile
 # TODO: implement a guest login function

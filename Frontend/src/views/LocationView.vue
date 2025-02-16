@@ -36,7 +36,6 @@ import Card from '@/components/Steps_Bottom.vue';
 
 <script>
 import axios from 'axios';
-import { DxDropDownBox } from 'devextreme-vue';
 
 export default {
   data() {
