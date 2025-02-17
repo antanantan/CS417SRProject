@@ -9,6 +9,9 @@ class User(db.Model):
     username = db.Column(db.String, nullable=False, unique=True)
     password = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False)
+    role = db.Column(db.String, default="user") #we can set user or admin accounts
+    created_at = db.Column(db.DateTime, server_default=db.func.current_timestamp()) # sets time stamp for the account when created
+
 
     allergies = db.relationship('UserAllergy', back_populates='user', cascade="all, delete")
 
@@ -72,6 +75,7 @@ class Menu(db.Model):
     restaurant = db.relationship('Restaurant', back_populates='menus')
     menu_options = db.relationship('MenuOptionMapping', back_populates='menu', cascade="all, delete")
 
+    
 class MenuOption(db.Model):
     __tablename__ = 'menu_options'
     id = db.Column(db.Integer, primary_key=True)

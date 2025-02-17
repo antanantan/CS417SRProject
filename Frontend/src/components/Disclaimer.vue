@@ -24,9 +24,10 @@
           this application, you are agreeing that we as the application
           developers are not directly responsible for injuries that occur
           as a result of the meal preparation at the eatery.
-
-        <button type="button" class="btn-green" @click="close(false)">I Agree</button>
-        <button class="btn-green" @click="close(true)">I Disagree</button> <!-- Using Routerlink doesn't close the modal before rerouting which may lead to future issues-->
+         <div class="d-flex justify-content-center gap-3">
+           <button type="button" class="btn-green" @click="close(false)">I Agree</button>
+           <button class="btn-green" @click="close(true)">I Disagree</button> <!-- Using Routerlink doesn't close the modal before rerouting which may lead to future issues-->
+         </div>
         </slot>
       </footer>
     </div>
@@ -63,17 +64,19 @@ const close = (closeandNavigate) => {
   .modal {
     background: #FFFFFF;
     box-shadow: 2px 2px 20px 1px;
-    overflow-x: auto;
     display: flex;
     flex-direction: column;
-    width: 600px;
+    width: 50%;
+    max-height: 90vh;
+    min-height: 250px;
+    overflow: hidden; 
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    padding: 20px;
   }
 
-  .modal-header,
-  .modal-footer {
-    padding: 15px;
-    display: flex;
-  }
 
   .modal-header {
     position: relative;
@@ -82,13 +85,26 @@ const close = (closeandNavigate) => {
     font-size: x-large;
     font-weight: bolder;
     justify-content: center;
+    padding: 15px;
   }
 
   .modal-footer {
     border-top: 1px solid #eeeeee;
+    display: flex;
     flex-direction: column;
-    justify-content: flex-end;
-    font-size: large;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding-top: 20px;
+    padding-bottom: 10px;
+    gap: 10px;
+    width: 100%;
+  }
+
+  .modal-footer div {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
   }
 
   .modal-body {
@@ -104,6 +120,7 @@ const close = (closeandNavigate) => {
     border-radius: 2px;
     width: 100px;
   }
+
   .btn-green:hover {
     background: #72ce64;
     border: 1px solid #2fb43f;

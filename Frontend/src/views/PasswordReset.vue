@@ -1,6 +1,11 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
+
+const router = useRouter();
+const email = ref('');
+const errorMessage = ref('');
 
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
@@ -33,6 +38,8 @@ const continueAsGuest = () => {
           Submit
         </button>
       </form>
+      
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     <!--this would be a good test to see if we can actually send things to an email address-->
     </div>
   </div>

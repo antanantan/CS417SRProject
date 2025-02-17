@@ -1,16 +1,5 @@
 from flask import Flask
 from datetime import timedelta
-app = Flask(__name__)
-app.secret_key = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!' 
-app.config.update(
-    SESSION_COOKIE_NAME='session',  # Default cookie name for sessions
-    SESSION_COOKIE_SECURE=False,    # False for local development (use HTTPS in production)
-    SESSION_COOKIE_HTTPONLY=True,   # Make sure the cookie is only accessible via HTTP (not JavaScript)
-    SESSION_COOKIE_SAMESITE='None',  # Set to 'None' to allow cross-origin requests
-    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
-    SESSION_COOKIE_PATH='/',
-)
-
 from flask import flash, jsonify, g, request, session, make_response
 from flask_cors import CORS
 import os, sqlite3, folium, pandas
@@ -22,7 +11,15 @@ from geopy.distance import geodesic
 from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu
 from database.seed_data import seed_db
 
+app = Flask(__name__)
+
+app.config['SECRET_KEY'] = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!' 
+app.config['JWT_SECRET_KEY'] = '@1S0_1nC0mPr3h3nS1b13-But-D3l1b3r@t3!'
+app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
+
+#initialize extensions
 bcrypt = Bcrypt(app)
+jwt = JWTManager(app)
 CORS(app, supports_credentials=True, origins="http://localhost:3000")
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -31,7 +28,7 @@ DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'database', 'db.sqlite3')}"
 app.config['SQLALCHEMY_DATABASE_URI'] = DATABASE_URI
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
-# link 'db' to the app
+# link 'db' to the app 
 db.init_app(app)
 
 # initialize database
@@ -92,46 +89,33 @@ def login():
     user = User.query.filter_by(username=username).first()
 
     if user and bcrypt.check_password_hash(user.password, password):
-# should assign user information to current session
-        session['user_id'] = user.id  
-        session['username'] = user.username
-        session.permanent = True
-        print(f"session data: {session}")
-        print(f"Cookies received first: {request.cookies}")
-        return jsonify({"message": "user logged in successfully.", "username": session['username']}), 200
-    else:
-        return jsonify({"message": "User not found. Please create an account first."}), 404
+        access_token = create_access_token(identity=str(user.id))
+
+        return jsonify({"message": "user logged in successfully.", "token": access_token}), 200
+
+    return jsonify({"message": "User not found. Please create an account first."}), 404
 
 # function for pulling profile information from current session
 @app.route('/profile', methods=['GET'])
+@jwt_required() # user must be logged in to view profile
 def profile():
-#debugging logs
-    print(f"session data 2: {session}")
-    print(f"Cookies received: {request.cookies}")
 
-    user_id = session.get('user_id')
-    print(f"Retrieved user_id: {user_id}") 
-    if not user_id:
-        return jsonify({"message": "Not logged in."}), 401
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)  
 
-    # Retrieve the user from the database using user_id
-    user = User.query.get(int(user_id))
     if user:
-        response = jsonify({"username": user.username})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response
-    else:
-        return jsonify({"message": "User not found."}), 404
-
+        return jsonify({"username": user.username, "email": user.email}), 200
+    
+    return jsonify({"message": "User not found."}), 404
 
 
 
 # function to handle user logout
 
 @app.route('/logout', methods=['POST'])
+@jwt_required() # user must be logged in to log out
 def logout():
-    session.clear()
-    return jsonify ({"message": "you have been logged out."}), 200
+    return jsonify ({"message": "you have been logged out."}), 200 # frontend token gets deleted from local storage and redirect to login page
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
 #       not the most secure method right now but at least that page will have something to do on it
@@ -184,11 +168,12 @@ def create_map(country='US'):
 # TODO: implement a guest login function
 # TODO: it might be expensive to save the changes every time a user adds an allergen -> save the changes in a session and then commit them all at once?
 @app.route('/save_allergy', methods=['POST'])
+@jwt_required()  # user must be logged in to save allergy information
 def save_allergy():
-    user_id = session.get('user_id')  # get user id from cookie session
+    user_id = get_jwt_identity()  # get user id from cookie session
 
     if not user_id:
-        return jsonify({"message": "Not logged in."}), 401  # user not logged in
+        return jsonify({"message": "Not logged in."}), 404  # user not found
 
     data = request.get_json()
     allergies = data.get('allergies')  # a list like [{ "name": "Almond", "scale": 2 }, { "name": "Milk", "scale": 1 }]
