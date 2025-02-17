@@ -1,3 +1,6 @@
+import 'bootstrap/dist/css/bootstrap.min.css';
+import 'bootstrap/dist/js/bootstrap.bundle.min.js';
+
 import 'devextreme/dist/css/dx.light.css';
 import './assets/main.css'
 
