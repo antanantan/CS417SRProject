@@ -33,8 +33,6 @@ export default {
     try {
       const response = await axios.get('http://127.0.0.1:5000/profile', { withCredentials: true });
       
-      console.log("Response from backend:", response);
-      
       if (response.data.username) {
         this.username = response.data.username;
       } else {
@@ -48,7 +46,7 @@ export default {
   },
     async logout() {
       try {
-        const response = await axios.post('http://127.0.0.1:5000/logout', {});
+        const response = await axios.post('http://127.0.0.1:5000/logout', {withCredentials: true});
         if (response.data.message === "you have been logged out.") {
           this.username = '';
           console.log("logout successful");

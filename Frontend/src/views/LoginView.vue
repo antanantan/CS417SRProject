@@ -45,6 +45,10 @@ const profile = () => {
         <button type="submit" class="w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 focus:outline-none focus:bg-green-700">
           Sign In
         </button>
+
+        <br>
+        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
       </form>
 
       
@@ -74,23 +78,30 @@ export default {
     return {
       current_username: '',
       current_password: '',
-      errorMessage: '',
+      errorMessage: null,
     };
   },
   methods: {
     async login() {
       try {
-        const response = await axios.post('http://127.0.0.1:5000/login', {username: this.current_username, password: this.current_password});
+        const response = await axios.post('http://127.0.0.1:5000/login', {username: this.current_username, password: this.current_password}, {withCredentials: true});
         if (response.data.message === "user logged in successfully.") {
           console.log("logging in as", this.current_username);
           this.$router.push("/profile");
         }
       } catch (error) {
-        this.errorMessage = error.response ? error.response.data.message : 'something went wrong.';
+        this.errorMessage = error.response ? error.response.data.message : 'Something went wrong.';
       }
     }
   }
 };
 </script>
 
-<style></style>
+<style scoped>
+.error-message {
+  color: red;
+  font-weight: bold;
+  display:flex;
+  text-align: center;
+}
+</style>

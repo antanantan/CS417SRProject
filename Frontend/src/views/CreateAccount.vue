@@ -60,6 +60,9 @@ const continueAsGuest = () => {
         </button>
       </form>
 
+      <br>
+        <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+
       <div class="text-center mt-4">
         <span class="text-gray-500 mx-2">or</span>
         <RouterLink
@@ -80,7 +83,7 @@ export default {
       new_username: '',
       new_email: '',
       new_password: '',
-      errorMessage: '',
+      errorMessage: null,
     };
   },
   methods: {
@@ -88,13 +91,13 @@ export default {
       try {
         const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
 
-        if (response.data.message === 'account created successfully.') {
+        if (response.data.message === 'Account created successfully.') {
           this.$router.push('/login');  
         }
       } 
       catch (error) {
         if (error.response && error.response.data) {
-          this.errorMessage = error.response.data.message || 'something went wrong';
+          this.errorMessage = error.response.data.message || 'Something went wrong. Please try again.';
         }
       }
     },
@@ -104,7 +107,12 @@ export default {
 </script>
 
 
-<style>
-
+<style scoped>
+.error-message {
+  color: red;
+  font-weight: bold;
+  display:flex;
+  text-align: center;
+}
 </style>
 

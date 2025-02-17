@@ -3,7 +3,7 @@ Things to Do! Listed in Order of Priority
 User Profile
   - clean up user profile page and be able to pull session information, i.e. display user's username 
   - allow user to SECURELY reset their password
-  - push error messages for logging in with incorrect/invalid credentials to the frontend, possibly as a flash message
+  - ~~push error messages for logging in with incorrect/invalid credentials to the frontend, possibly as a flash message~~
 
 Allergen Profile
   - import menu information into the menu interface **(Y)**

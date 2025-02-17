@@ -1,4 +1,5 @@
 from flask import Flask
+from datetime import timedelta
 app = Flask(__name__)
 app.secret_key = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!' 
 app.config.update(
@@ -6,6 +7,8 @@ app.config.update(
     SESSION_COOKIE_SECURE=False,    # False for local development (use HTTPS in production)
     SESSION_COOKIE_HTTPONLY=True,   # Make sure the cookie is only accessible via HTTP (not JavaScript)
     SESSION_COOKIE_SAMESITE='None',  # Set to 'None' to allow cross-origin requests
+    PERMANENT_SESSION_LIFETIME=timedelta(days=7),
+    SESSION_COOKIE_PATH='/',
 )
 
 from flask import flash, jsonify, g, request, session, make_response
@@ -20,7 +23,6 @@ from database.seed_data import seed_db
 
 bcrypt = Bcrypt(app)
 CORS(app, supports_credentials=True, origins="http://localhost:3000")
-
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'database', 'db.sqlite3')}"
@@ -57,15 +59,13 @@ def register():
     password = data.get('password')
 
     if not username or not email or not password:
-        return jsonify({"message": "Missing required fields"}), 400
+        return jsonify({"message": "Missing required fields. Please try again."}), 400
     
     hashed_password = bcrypt.generate_password_hash(password).decode('utf-8')
-
     existing_user = User.query.filter_by(username=username).first()
 
     if existing_user:
-        return jsonify({"message": "username already taken. please choose a different one."}), 401
-
+        return jsonify({"message": "Username already taken. Please choose a different one."}), 401
     try:
         new_user = User(username=username, email=email, password=hashed_password)
         db.session.add(new_user)
@@ -76,41 +76,45 @@ def register():
         return jsonify({"message": "Error creating account", "error": str(e)}), 500
 
 
-@app.route('/login', methods=['GET', 'POST'])
+
+# TODO: handle unique characters as appropriate and fix whatever this is
+@app.route('/login', methods=['POST'])
 def login():
-    if request.method=='POST':
-        data = request.get_json()
-        username = data.get('username')
-        password = data.get('password')
+# pulling data from login form
+    data = request.get_json()
+    username = data.get('username')
+    password = data.get('password')
 
-        if not username or not password:
-            return jsonify({"message": "Missing required fields"}), 400
+    if not username or not password:
+        return jsonify({"message": "Missing required fields. Please try again."}), 400
 
-        user = User.query.filter_by(username=username).first()
+    user = User.query.filter_by(username=username).first()
 
-        if user and bcrypt.check_password_hash(user.password, password):
-            session['user_id'] = user.id  
-            print(f"session data: {session}")
-            return jsonify({"message": "user logged in successfully."})
-        
-        elif user:
-            return jsonify({"message": "Incorrect password."}), 401
-        else:
-            return jsonify({"message": "User not found."}), 404
+    if user and bcrypt.check_password_hash(user.password, password):
+# should assign user information to current session
+        session['user_id'] = user.id  
+        session['username'] = user.username
+        session.permanent = True
+        print(f"session data: {session}")
+        print(f"Cookies received first: {request.cookies}")
+        return jsonify({"message": "user logged in successfully.", "username": session['username']}), 200
+    else:
+        return jsonify({"message": "User not found. Please create an account first."}), 404
 
 # function for pulling profile information from current session
 @app.route('/profile', methods=['GET'])
 def profile():
+#debugging logs
+    print(f"session data 2: {session}")
     print(f"Cookies received: {request.cookies}")
-    user_id = session.get('user_id')
 
+    user_id = session.get('user_id')
     print(f"Retrieved user_id: {user_id}") 
     if not user_id:
         return jsonify({"message": "Not logged in."}), 401
 
     # Retrieve the user from the database using user_id
     user = User.query.get(int(user_id))
-
     if user:
         response = jsonify({"username": user.username})
         response.headers.add('Access-Control-Allow-Origin', '*')
@@ -122,7 +126,8 @@ def profile():
 
 
 # function to handle user logout
-@app.route('/logout', methods=['GET', 'POST'])
+
+@app.route('/logout', methods=['POST'])
 def logout():
     session.clear()
     return jsonify ({"message": "you have been logged out."}), 200
