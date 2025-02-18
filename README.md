@@ -9,7 +9,7 @@ backend
 
 1) cd backend
 2) python3 -m venv venv
-3) source .venv/bin/activate (mac) | .venv\Scripts\activate (windows)
+3) source venv/bin/activate (mac) | venv\Scripts\activate (windows)
 5) pip install -r requirements.txt
 
 
