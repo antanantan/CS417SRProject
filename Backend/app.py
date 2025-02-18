@@ -161,9 +161,9 @@ def create_map(country='US'):
     
     map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
 
-# marker for the initial zip code, but no need if the restaurants are already marked   
-    # folium.Marker([location.latitude, location.longitude]).add_to(map)
+# marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
 
+# adjust as needed
     restaurants = Restaurant.query.filter(
         Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
         Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
@@ -171,7 +171,7 @@ def create_map(country='US'):
 
     for restaurant in restaurants:
         restaurant_location = [restaurant.latitude, restaurant.longitude]
-        restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Category: {restaurant.category}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
+        restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
         
         folium.Marker(
             restaurant_location,

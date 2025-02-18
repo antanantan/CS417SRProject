@@ -17,3 +17,4 @@ Location View
 Miscellaneous
   - ~~fix vue api (use "options" instead of "compositions")~~
   - make it look pretty
+  - start implementing some sort of pseudo-payment feature
