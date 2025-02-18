@@ -4,15 +4,28 @@ import axios from 'axios';
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
 };
+const createAccount = () => {
+  router.push('/create'); 
+};
 </script>
 
 <template>
     <h1>Step 4: Place your Order</h1>
-<!--the option to create an account should also be here like at the end,
-    i.e. "to save information for future orders please create an account" type thing-->
+    <h2>Order Recap</h2>
+   
+   <RouterLink
+          to="/create"
+          class="text-blue-500 hover:underline"
+          @click.prevent="createAccount">
+          To save information for future orders, please create an account.
+      </RouterLink>
     
     <Card></Card>
 </template>
+
+<script>
+// has to be able to push the information that the user included in their order
+</script>
   
 <style>
 h1 {

@@ -25,7 +25,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_9e9fcd1e217d746725dbe27e1bd4aa5d {
+                #map_0662170809f0ac6ee54771b13570f1d9 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -39,14 +39,14 @@
 <body>
     
     
-            <div class="folium-map" id="map_9e9fcd1e217d746725dbe27e1bd4aa5d" ></div>
+            <div class="folium-map" id="map_0662170809f0ac6ee54771b13570f1d9" ></div>
         
 </body>
 <script>
     
     
-            var map_9e9fcd1e217d746725dbe27e1bd4aa5d = L.map(
-                "map_9e9fcd1e217d746725dbe27e1bd4aa5d",
+            var map_0662170809f0ac6ee54771b13570f1d9 = L.map(
+                "map_0662170809f0ac6ee54771b13570f1d9",
                 {
                     center: [40.754130848987536, -73.9903641017134],
                     crs: L.CRS.EPSG3857,
@@ -63,7 +63,7 @@
 
         
     
-            var tile_layer_020dd045f74488e6c67f38e3e190eff0 = L.tileLayer(
+            var tile_layer_e8ded5727b586d4d45735eb4825b47d6 = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
   "minZoom": 0,
@@ -80,14 +80,31 @@
             );
         
     
-            tile_layer_020dd045f74488e6c67f38e3e190eff0.addTo(map_9e9fcd1e217d746725dbe27e1bd4aa5d);
+            tile_layer_e8ded5727b586d4d45735eb4825b47d6.addTo(map_0662170809f0ac6ee54771b13570f1d9);
         
     
-            var marker_0d2cc2212385bbe31ee7c9f4fbcc0eb4 = L.marker(
-                [40.754130848987536, -73.9903641017134],
+            var marker_2a45e1ceeb5cc277d079d1db34127124 = L.marker(
+                [40.75412660177139, -73.98523105085792],
                 {
 }
-            ).addTo(map_9e9fcd1e217d746725dbe27e1bd4aa5d);
+            ).addTo(map_0662170809f0ac6ee54771b13570f1d9);
         
+    
+        var popup_f580ccd27e77ef2338aa8b6ab50be25c = L.popup({
+  "maxWidth": 300,
+});
+
+        
+            
+                var html_bedd169bba358effb5fc9177aa701dac = $(`<div id="html_bedd169bba358effb5fc9177aa701dac" style="width: 100.0%; height: 100.0%;"><b>Pret A Manger</b><br>4 Bryant Pk, New York, NY 10018<br>Category: Self service restaurant<br>Phone: +16464102071</div>`)[0];
+                popup_f580ccd27e77ef2338aa8b6ab50be25c.setContent(html_bedd169bba358effb5fc9177aa701dac);
+            
+        
+
+        marker_2a45e1ceeb5cc277d079d1db34127124.bindPopup(popup_f580ccd27e77ef2338aa8b6ab50be25c)
+        ;
+
+        
+    
 </script>
 </html>

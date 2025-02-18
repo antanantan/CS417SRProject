@@ -160,8 +160,23 @@ def create_map(country='US'):
     location = geolocator.geocode(f"{zip_code}, {country}")
     
     map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
+
+# marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
+
+# adjust as needed
+    restaurants = Restaurant.query.filter(
+        Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
+        Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
+    ).all()
+
+    for restaurant in restaurants:
+        restaurant_location = [restaurant.latitude, restaurant.longitude]
+        restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
         
-    folium.Marker([location.latitude, location.longitude]).add_to(map)
+        folium.Marker(
+            restaurant_location,
+            popup=folium.Popup(restaurant_info, max_width=300)
+        ).add_to(map)
 
     map_path = os.path.join('static', 'map.html')
 

@@ -8,7 +8,7 @@ def seed_db():
     Seed the database with initial data for allergens, restaurants, and menus.
     """
     try:
-        seed_allergens()  # ✅ 各関数内で `commit()` する
+        seed_allergens()  
         seed_restaurants()  
         # seed_menus()
 
