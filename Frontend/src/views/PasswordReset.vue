@@ -38,7 +38,7 @@ const continueAsGuest = () => {
           Submit
         </button>
       </form>
-      
+
       <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     <!--this would be a good test to see if we can actually send things to an email address-->
     </div>
@@ -58,7 +58,7 @@ export default {
       try {
         const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
 
-        if (response.data.message === 'account created successfully.') {
+        if (response.data.message === 'Account created successfully') {
           this.$router.push('/login');  
         }
       } 

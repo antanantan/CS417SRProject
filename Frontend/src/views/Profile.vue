@@ -16,6 +16,7 @@ const fetchProfile = async () => {
       await router.push('/login');
       return;
     } 
+
     try{
     const response = await axios.get('http://localhost:5000/profile', {
       headers: { Authorization: `Bearer ${token}` }, //sends token in header.
@@ -24,24 +25,20 @@ const fetchProfile = async () => {
   if (response.data.username) {
       username.value = response.data.username;
     } else {
-      console.error('No username returned:', response.data);
+      console.warn('No username returned:', response.data);
       username.value = null;
     }
-  } catch (error) {
-    console.error('Error fetching profile:', error);
+} catch (error) {
+    if (error.response && error.response.status === 401) {
+      localStorage.removeItem('token'); // Expired token
+      errorMessage.value = 'Your session has expired. Please log in again.';
+      await router.push('/login');
+    } else {
+      errorMessage.value = 'Failed to load profile';
+    }
     username.value = null;
   }
-};
-if (errorMessage.response.status === 401) {
-  localStorage.removeItem('token'); //expired token
-  errorMessage.value = 'Your session has expired. Please log in again.';
-  await router.push('/login');
-} else {
-  errorMessage.value = "Failed to load profile";
-}
-  username.value = null;
-};
- 
+}; 
 
 const logout = () => {
   localStorage.removeItem('token');
@@ -63,3 +60,11 @@ onMounted(fetchProfile);
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   </div>
 </template>
+
+<style scoped>
+.error-message {
+  color: red;
+  font-weight: bold;
+  margin-top: 10px;
+}
+</style>

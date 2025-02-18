@@ -20,7 +20,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 #initialize extensions
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-CORS(app, supports_credentials=True, origins="http://localhost:3000")
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'database', 'db.sqlite3')}"
@@ -63,12 +63,21 @@ def register():
     existing_user = User.query.filter_by(username=username).first()
 
     if existing_user:
-        return jsonify({"message": "Username already taken. Please choose a different one."}), 401
+        if existing_user.email == email:
+            return jsonify({"message": "Email already registered."}), 422
+        if existing_user.username == username:
+            return jsonify({"message": "Username already taken. Please choose a different one."}), 422
+        
     try:
         new_user = User(username=username, email=email, password=hashed_password)
         db.session.add(new_user)
         db.session.commit()
-        return jsonify({"message": "Account created successfully."}), 201
+
+        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user
+
+        return jsonify({"message": "Account created successfully", 'token': token}), 201
+
+    
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating account", "error": str(e)}), 500

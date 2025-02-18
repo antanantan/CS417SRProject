@@ -18,22 +18,34 @@ const GoToLogin = () => {
   router.push('/login');
 };  
 
-const login= async () =>{
+const register= async () =>{
+  if(!new_username.value || !new_email.value || !new_password.value){
+    errorMessage.value = 'Please fill out all fields';
+    return;
+  }
   try{
-    const response = await axios.post('http://localhost:5000/login',{
+    const response = await axios.post('http://localhost:5000/register',{
       username: new_username.value,
       email: new_email.value,
       password: new_password.value,  
-  },
-  );
-
-  if (response.data.message === 'Account created successfully') {
+  }
+);
+  if (response.status === 201) {
     console.log("Account created: ,", new_username.value);
+    localStorage.setItem('token', response.data.token);
     router.push('/profile');
   }
-}
-  catch(error){
-    errorMessage.value = error.response ? error.response.data.message : 'Registration failed please try again.';
+} catch(error){
+  if (error.response){  
+    const status = error.response.status;
+    if (status === 422) {
+      errorMessage.value = 'Username or email already in use. Please choose another.';
+    } else if(status === 400){
+      errorMessage.value = 'Invalid input.';
+    } else {
+      errorMessage.value = error.response.data.message;
+    }
+  }
   }
 };
 </script>
@@ -57,11 +69,12 @@ const login= async () =>{
             id="username"
             placeholder="Enter a username"
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+            required
           />
         </div>
 
         <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email" required>
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="email" >
             Email
           </label>
           <input
@@ -70,6 +83,7 @@ const login= async () =>{
             id="email"
             placeholder="Enter your email"
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+            required
           />
         </div>
 
@@ -78,6 +92,7 @@ const login= async () =>{
             Password
           </label>
           <input v-model="new_password" type="password" id="password" placeholder="Enter a password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"/>
+          
         </div>
 
         <button
