@@ -110,7 +110,7 @@ def login():
 def profile():
 
     user_id = get_jwt_identity()
-    user = User.query.get(user_id)  
+    user = User.Session.get(user_id)  
 
     if user:
         return jsonify({"username": user.username, "email": user.email}), 200
@@ -187,7 +187,7 @@ def save_allergy():
     data = request.get_json()
     allergies = data.get('allergies')  # a list like [{ "name": "Almond", "scale": 2 }, { "name": "Milk", "scale": 1 }]
 
-    user = User.query.get(user_id)
+    user = User.Session.get(user_id)
     if not user:
         return jsonify({"message": "User not found."}), 404
 
