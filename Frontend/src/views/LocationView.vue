@@ -17,6 +17,7 @@ import Card from '@/components/Steps_Bottom.vue';
 </div>
 
 <br>
+<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 <p style="display: flex; justify-content: center;">space for additional filters? like type of food? low priority implementation</p>
 
 <div class="dropdown">
@@ -42,6 +43,7 @@ export default {
     return {
       zip_entered: '', 
       map_displayed: '',
+      errorMessage: null,
     };
   },
   methods: {
@@ -58,7 +60,7 @@ export default {
         this.map_displayed = `http://127.0.0.1:5000${response.data.map_url}?t=${new Date().getTime()}`;  
         }
       catch (error) {
-        this.error = 'error generating map.';
+        this.errorMessage.value = 'error generating map.';
         console.error(error);
       }
     },
@@ -66,7 +68,7 @@ export default {
 };
 </script>
 
-<style>
+<style scoped>
 h1 {
   font-size: xx-large;
   text-align: center;
@@ -92,4 +94,11 @@ iframe {
   width: 800px;
   height: 550px;
 }
+.error-message {
+  color: red;
+  font-weight: bold;
+  display:flex;
+  text-align: center;
+}
+
 </style>
