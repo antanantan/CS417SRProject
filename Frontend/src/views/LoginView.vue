@@ -1,7 +1,12 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import axios from 'axios';
+import { ref } from 'vue';
+
 const router = useRouter();
+const current_username = ref('');
+const current_password = ref('');
+const errorMessage = ref('');
 
 const goToForgotPassword = () => {
   router.push('/forgot-password');
@@ -11,9 +16,30 @@ const continueAsGuest = () => {
   router.push('/allergy_list'); 
 };
 
-const profile = () => {
-  router.push('/profile'); 
+
+const login = async () => {
+  try {
+    const response = await axios.post('http://localhost:5000/login', {
+      username: current_username.value,
+      password: current_password.value,
+    }, { withCredentials: true }
+  );
+
+  if (response.data.token) {
+    const token = response.data.token;
+    console.log("Logged in as", current_username.value);
+
+    localStorage.setItem('token', token);
+    router.push('/profile');
+
+  }else{
+    errorMessage.value = "Login failed. Please try again."
+  }
+} catch (error) {
+  errorMessage.value = error.response ? error.response.data.message : 'Something went wrong.';
+}
 };
+
 </script>
 
 <template>
@@ -71,31 +97,6 @@ const profile = () => {
     </div>
   </div>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      current_username: '',
-      current_password: '',
-      errorMessage: null,
-    };
-  },
-  methods: {
-    async login() {
-      try {
-        const response = await axios.post('http://127.0.0.1:5000/login', {username: this.current_username, password: this.current_password}, {withCredentials: true});
-        if (response.data.message === "user logged in successfully.") {
-          console.log("logging in as", this.current_username);
-          this.$router.push("/profile");
-        }
-      } catch (error) {
-        this.errorMessage = error.response ? error.response.data.message : 'Something went wrong.';
-      }
-    }
-  }
-};
-</script>
 
 <style scoped>
 .error-message {

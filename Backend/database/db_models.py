@@ -72,6 +72,7 @@ class Menu(db.Model):
     restaurant = db.relationship('Restaurant', back_populates='menus')
     menu_options = db.relationship('MenuOptionMapping', back_populates='menu', cascade="all, delete")
 
+    
 class MenuOption(db.Model):
     __tablename__ = 'menu_options'
     id = db.Column(db.Integer, primary_key=True)

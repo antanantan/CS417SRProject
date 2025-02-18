@@ -1,14 +1,53 @@
 <script setup>
-import { ref } from 'vue';
+import { ref} from 'vue';
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 
 const router = useRouter();
 
+const new_username = ref('');
+const new_password = ref('');
+const new_email = ref('');
+const errorMessage = ref(''); 
+
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
 };
 
+const GoToLogin = () => {
+  router.push('/login');
+};  
+
+const register= async () =>{
+  if(!new_username.value || !new_email.value || !new_password.value){
+    errorMessage.value = 'Please fill out all fields';
+    return;
+  }
+  try{
+    const response = await axios.post('http://localhost:5000/register',{
+      username: new_username.value,
+      email: new_email.value,
+      password: new_password.value,  
+  }
+);
+  if (response.status === 201) {
+    console.log("Account created: ,", new_username.value);
+    localStorage.setItem('token', response.data.token);
+    router.push('/profile');
+  }
+} catch(error){
+  if (error.response){  
+    const status = error.response.status;
+    if (status === 422) {
+      errorMessage.value = 'Username or email already in use. Please choose another.';
+    } else if(status === 400){
+      errorMessage.value = 'Invalid input.';
+    } else {
+      errorMessage.value = error.response.data.message;
+    }
+  }
+  }
+};
 </script>
 
 <template>
@@ -17,6 +56,7 @@ const continueAsGuest = () => {
 <div class="flex items-center justify-center min-h-screen bg-gray-100">
     <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
       <div class="text-center mb-6">
+        <b>Create Your Account</b>
       </div>
       <form @submit.prevent="register">
         <div class="mb-4">
@@ -29,11 +69,12 @@ const continueAsGuest = () => {
             id="username"
             placeholder="Enter a username"
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+            required
           />
         </div>
 
         <div class="mb-6">
-          <label class="block text-gray-700 text-sm font-bold mb-2" for="email" required>
+          <label class="block text-gray-700 text-sm font-bold mb-2" for="email" >
             Email
           </label>
           <input
@@ -42,6 +83,7 @@ const continueAsGuest = () => {
             id="email"
             placeholder="Enter your email"
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
+            required
           />
         </div>
 
@@ -50,6 +92,7 @@ const continueAsGuest = () => {
             Password
           </label>
           <input v-model="new_password" type="password" id="password" placeholder="Enter a password" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"/>
+          
         </div>
 
         <button
@@ -63,7 +106,13 @@ const continueAsGuest = () => {
       <br>
         <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
 
-      <div class="text-center mt-4">
+        <div class="text-center mt-4">
+        <RouterLink
+          to="/login"
+          class="text-blue-500 hover:underline"
+          @click.prevent="GoToLogin">
+          Log In
+        </RouterLink>
         <span class="text-gray-500 mx-2">or</span>
         <RouterLink
           to="/"
@@ -75,36 +124,6 @@ const continueAsGuest = () => {
     </div>
   </div>
 </template>
-
-<script>
-export default {
-  data() {
-    return {
-      new_username: '',
-      new_email: '',
-      new_password: '',
-      errorMessage: null,
-    };
-  },
-  methods: {
-    async register() {
-      try {
-        const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
-
-        if (response.data.message === 'Account created successfully.') {
-          this.$router.push('/login');  
-        }
-      } 
-      catch (error) {
-        if (error.response && error.response.data) {
-          this.errorMessage = error.response.data.message || 'Something went wrong. Please try again.';
-        }
-      }
-    },
-  },
-};
-
-</script>
 
 
 <style scoped>
