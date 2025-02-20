@@ -8,7 +8,6 @@ const router = useRouter();
 const errorMessage = ref('');
 
 const fetchProfile = async () => {
-
   const token = localStorage.getItem('token'); //retrieves token from the local storage
 
     if (!token) {
@@ -48,6 +47,11 @@ const logout = () => {
 }
 
 onMounted(fetchProfile);
+
+const allergyPage = () => {
+  router.push('/allergy_list'); 
+};
+
 </script>
 
 <template>
@@ -59,6 +63,8 @@ onMounted(fetchProfile);
     <h1>You are not logged in</h1>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   </div>
+
+  <button @click="allergyPage">Go To Order</button>
 </template>
 
 <style scoped>

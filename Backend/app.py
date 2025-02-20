@@ -108,7 +108,6 @@ def login():
 @app.route('/profile', methods=['GET'])
 @jwt_required() # user must be logged in to view profile
 def profile():
-
     user_id = get_jwt_identity()
     user = db.session.get(User, user_id)  
 
@@ -117,10 +116,7 @@ def profile():
     
     return jsonify({"message": "User not found."}), 404
 
-
-
 # function to handle user logout
-
 @app.route('/logout', methods=['POST'])
 @jwt_required() # user must be logged in to log out
 def logout():
@@ -190,36 +186,44 @@ def create_map(country='US'):
 
 # TODO: link allergen information to profile
 # TODO: implement a guest login function
-# TODO: it might be expensive to save the changes every time a user adds an allergen -> save the changes in a session and then commit them all at once?
-@app.route('/save_allergy', methods=['POST'])
-@jwt_required()  # user must be logged in to save allergy information
-def save_allergy():
-    user_id = get_jwt_identity()  # get user id from cookie session
+@app.route('/generate_list', methods=['GET'])
+def generate_list():
+    allergens = Allergen.query.all()
+    allergy_data = [
+        {
+            "id": allergen.id,
+            "name": allergen.name,
+            "selected": False,  
+            "severity": ""  
+        }
+        for allergen in allergens]
+    return jsonify({"allergies": allergy_data}), 200
 
+@app.route('/save_allergy', methods=['POST'])
+@jwt_required()  
+def save_allergy():
+    user_id = get_jwt_identity()  
     if not user_id:
-        return jsonify({"message": "Not logged in."}), 404  # user not found
+        return jsonify({"message": "Not logged in."}), 404  
 
     data = request.get_json()
+    print("Received data:", data)
+    
     allergies = data.get('allergies')  # a list like [{ "name": "Almond", "scale": 2 }, { "name": "Milk", "scale": 1 }]
+    if not allergies:
+        return jsonify({"message": "No allergies data found."}), 400
 
     user = db.session.get(User, user_id)
     if not user:
         return jsonify({"message": "User not found."}), 404
-
-    # reset user's allergy information
     UserAllergy.query.filter_by(user_id=user.id).delete()
     db.session.commit()
 
-    # if the user has no allergies, return success message
-    if not allergies:
-        return jsonify({"message": "Allergy information cleared."}), 200
-
-    # add new allergy information
+# add new allergy information
     for allergy in allergies:
         allergy_name = allergy.get("name")
         scale = allergy.get("scale", 2)  # default scale value is 2 (moderate)
-
-        if scale not in [0, 1, 2, 3]:  # check if scale value is valid
+        if scale not in [0, 1, 2, 3]: 
             return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
 
         allergen = Allergen.query.filter_by(name=allergy_name).first()
@@ -228,32 +232,8 @@ def save_allergy():
             user_allergy = UserAllergy(user_id=user.id, allergen_id=allergen.id, scale=scale)
             db.session.add(user_allergy)
 
-    db.session.commit()  # save changes to database
+    db.session.commit()
     return jsonify({"message": "Allergy information updated successfully."}), 200
-
-
-# remove allergy
-
-"""
-@app.route('/remove_allergy', methods=['POST'])
-def remove_allergy():
-    username = request.form['username']
-    allergies = request.form.get['allergies']
-
- # not really sure how to change this code right now   
-
-    db = get_db()
-    cursor = db.cursor()
-    cursor.execute("SELECT * FROM users WHERE username = ?", (username,))
-    user = cursor.fetchone()
-
-    if user_id == user[0]:
-        for allergy in allergies:
-            cursor.execute("INSERT into allergies (username, allergy) VALUES (?, ?)", (username, allergies))
-            db.commit()
-"""
-
-
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0')

@@ -1,5 +1,5 @@
 Things to Do! Listed in Order of Priority
- The rest of the primary functionality hinges on the abilities to A) create a user profile that persists when the user is logged in so that they can create and edit a unique allergen profile and B) filter a list of food items based on the unique allergen profile. 
+ The rest of the primary functionality hinges on the abilities to A) allow a user to create a unique allergen profile that can be linked to their user profile for future access and B) filter a list of food items based on the unique allergen profile. 
 
 Allergen Profile
   - import menu information into the menu interface **(Y)**
