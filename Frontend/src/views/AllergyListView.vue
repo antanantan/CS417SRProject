@@ -37,16 +37,28 @@ const loadAllergies = async () => {
 
 onMounted(() => {loadAllergies();});
 
-// function to handle saving allergy profile to user. STILL NOT WORKING. PLEASE FIX
+// function to handle saving allergy profile to user.
 const saveAllergies = async () => {
   const token = localStorage.getItem("token");; 
-  const allergiesData = allergies.value.map(allergy => ({
+  const allergiesData = allergies.value.map(allergy => {
+    let scale = null;
+
+  // Update the scale based on severity
+  if (allergy.severity === 'intolerance') {
+    scale = 0;
+  } else if (allergy.severity === 'mild') {
+    scale = 1;
+  } else if (allergy.severity === 'moderate') {
+    scale = 2;
+  } else if (allergy.severity === 'strong') {
+    scale = 3;
+  }   
+  
+  return {
     name: allergy.name,
-    scale: allergy.severity === 'intolerance' ? 0 :
-           allergy.severity === 'mild' ? 1 :
-           allergy.severity === 'moderate' ? 2 :
-           allergy.severity === 'strong' ? 3 : 2 
-  }));
+    scale: scale
+  };
+  });
 
   console.log("Sending this data:", allergiesData);
 
@@ -97,7 +109,7 @@ const searchNext = () => {
   if (searchIndex.value < filteredAllergies.value.length - 1) {
     searchIndex.value++;
   } else {
-    searchIndex.value = 0; // loop back
+    searchIndex.value = 0; 
   }
   highlightRow.value = searchIndex.value;
 };
@@ -105,7 +117,7 @@ const searchPrev = () => {
   if (searchIndex.value > 0) {
     searchIndex.value--;
   } else {
-    searchIndex.value = filteredAllergies.value.length - 1; // loop back
+    searchIndex.value = filteredAllergies.value.length - 1;
   }
   highlightRow.value = searchIndex.value;
 };
@@ -160,6 +172,8 @@ const searchPrev = () => {
   <Card></Card>
 </template>
  
+
+
 <style scoped>
 .allergy-container {
   padding: 20px;
@@ -186,5 +200,3 @@ const searchPrev = () => {
   background-color: yellow;
 }
 </style>
-
-<!--reference: https://www.google.com/search?q=how+to+implement+a+checklist+in+vue&sca_esv=2100fb941db67f3a&ei=6ZkqZ8fcKLqHptQPxqS4kAE&ved=0ahUKEwiH9ZbYnMaJAxW6g4kEHUYSDhIQ4dUDCBA&uact=5&oq=how+to+implement+a+checklist+in+vue&gs_lp=Egxnd3Mtd2l6LXNlcnAiI2hvdyB0byBpbXBsZW1lbnQgYSBjaGVja2xpc3QgaW4gdnVlMgUQIRigATIFECEYoAEyBRAhGKABMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwVIwQ5QqglYsQpwBHgBkAEAmAGDAaABpAKqAQMyLjG4AQPIAQD4AQGYAgegArECwgIKEAAYsAMY1gQYR8ICBhAAGBYYHsICCxAAGIAEGIYDGIoFwgIIEAAYgAQYogSYAwCIBgGQBgiSBwM2LjGgB8YV&sclient=gws-wiz-serp-->

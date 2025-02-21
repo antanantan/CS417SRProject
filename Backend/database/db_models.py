@@ -36,7 +36,7 @@ class UserAllergy(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     allergen_id = db.Column(db.Integer, db.ForeignKey('allergens.id'), nullable=False)
-    scale = db.Column(db.Integer, nullable=False)  # 0: Intolerance, 1: Mild, 2: Moderate, 3: Severe
+    scale = db.Column(db.Integer, nullable=False)  
 
     user = db.relationship('User', back_populates='allergies')
     allergen = db.relationship('Allergen', back_populates='user_allergies')

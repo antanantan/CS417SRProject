@@ -17,7 +17,7 @@ app.config['SECRET_KEY'] = '1nC0mPr3h3nS1b13-But-D3l1b3r@t3!'
 app.config['JWT_SECRET_KEY'] = '@1S0_1nC0mPr3h3nS1b13-But-D3l1b3r@t3!'
 app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 
-#initialize extensions
+# initialize extensions
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
 CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
@@ -106,14 +106,19 @@ def login():
 
 # function for pulling profile information from current session
 @app.route('/profile', methods=['GET'])
-@jwt_required() # user must be logged in to view profile
+@jwt_required() 
 def profile():
     user_id = get_jwt_identity()
     user = db.session.get(User, user_id)  
-
     if user:
-        return jsonify({"username": user.username, "email": user.email}), 200
-    
+        allergies = db.session.query(Allergen.name).join(UserAllergy).filter(UserAllergy.user_id == user_id).all()
+        allergy_list = [allergy[0] for allergy in allergies]
+        
+        return jsonify({
+            "username": user.username,
+            "email": user.email,
+            "allergies": allergy_list
+        }), 200
     return jsonify({"message": "User not found."}), 404
 
 # function to handle user logout
@@ -182,9 +187,8 @@ def create_map(country='US'):
     response = jsonify({"map_url": "/static/map.html"})
     response.headers.add('Access-Control-Allow-Origin', '*')
     return response
-# we'd have to find a database of restaurants and their coordinates!
 
-# TODO: link allergen information to profile
+# TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
 @app.route('/generate_list', methods=['GET'])
 def generate_list():
@@ -194,7 +198,7 @@ def generate_list():
             "id": allergen.id,
             "name": allergen.name,
             "selected": False,  
-            "severity": ""  
+            "severity": None  
         }
         for allergen in allergens]
     return jsonify({"allergies": allergy_data}), 200
@@ -209,7 +213,7 @@ def save_allergy():
     data = request.get_json()
     print("Received data:", data)
     
-    allergies = data.get('allergies')  # a list like [{ "name": "Almond", "scale": 2 }, { "name": "Milk", "scale": 1 }]
+    allergies = data.get('allergies') 
     if not allergies:
         return jsonify({"message": "No allergies data found."}), 400
 
@@ -222,7 +226,9 @@ def save_allergy():
 # add new allergy information
     for allergy in allergies:
         allergy_name = allergy.get("name")
-        scale = allergy.get("scale", 2)  # default scale value is 2 (moderate)
+        scale = allergy.get("scale", '')  
+        if scale == None:
+            continue
         if scale not in [0, 1, 2, 3]: 
             return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
 

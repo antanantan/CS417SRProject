@@ -7,8 +7,9 @@ Allergen Profile
   - add ability to filter menu based on allergy profile 
 
 User Profile
-- ensure that JWT session tokens persist **(A)**
+- ~~ensure that JWT session tokens persist~~
 - allow user to SECURELY reset their password
+- display allergen information to the profile page
 
 Payment Feature
   - start implementing a pseudo-payment feature

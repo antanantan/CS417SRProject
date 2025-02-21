@@ -1,9 +1,6 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
 import axios from 'axios';
-const continueAsGuest = () => {
-  router.push('/allergy_list'); 
-};
 const createAccount = () => {
   router.push('/create'); 
 };
