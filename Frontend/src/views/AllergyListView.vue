@@ -2,9 +2,12 @@
 import Card from '@/components/Steps_Bottom.vue';
 import {useRouter} from "vue-router";
 import Modal from "@/components/Disclaimer.vue"
-import { ref, computed } from 'vue';
+import { ref, computed, onMounted} from 'vue';
+import axios from "axios";
+
 const router = useRouter();
 
+// code for handling modal
 const isModalVisible = ref(true);
 const closeModal = (closeandNavigate) => {
   isModalVisible.value = false;
@@ -13,29 +16,64 @@ const closeModal = (closeandNavigate) => {
   }
 };
 
-const allergies = ref([
-  { id: 1, name: 'Milk', severity: '', selected: false },
-  { id: 2, name: 'Eggs', severity: '', selected: false },
-  { id: 3, name: 'Peanuts', severity: '', selected: false },
-  { id: 4, name: 'Tree nuts', severity: '', selected: false },
-  { id: 5, name: 'Sesame', severity: '', selected: false },
-  { id: 6, name: 'Soy', severity: '', selected: false },
-  { id: 7, name: 'Fish', severity: '', selected: false },
-  { id: 8, name: 'Shellfish', severity: '', selected: false },
-  { id: 9, name: 'Wheat', severity: '', selected: false },
-  { id: 10, name: 'Triticale', severity: '', selected: false },
-  { id: 11, name: 'Celery', severity: '', selected: false },
-  { id: 12, name: 'Carrot', severity: '', selected: false },
-  { id: 13, name: 'Avocado', severity: '', selected: false },
-  { id: 14, name: 'Bell Pepper', severity: '', selected: false },
-  { id: 15, name: 'Potato', severity: '', selected: false },
-  { id: 16, name: 'Pumpkin', severity: '', selected: false },
-  { id: 17, name: 'Mushroom', severity: '', selected: false },
-  { id: 18, name: 'Onion', severity: '', selected: false },
-  { id: 19, name: 'Mustard', severity: '', selected: false },
-  { id: 20, name: 'Spices', severity: '', selected: false },
-  { id: 21, name: 'Gluten', severity: '', selected: false }
-]);
+// code for pulling allergy list from backend
+const allergies = ref([]);
+const loadAllergies = async () => {
+  const token = localStorage.getItem("jwt"); 
+  try {
+    const response = await axios.get('http://localhost:5000/generate_list', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+
+    allergies.value = response.data.allergies.map(item => ({
+      ...item,
+      severity: '',  
+      selected: false  
+    }));
+  } catch (error) {
+    console.error('Error loading allergies:', error);
+  }
+};
+
+onMounted(() => {loadAllergies();});
+
+// function to handle saving allergy profile to user.
+const saveAllergies = async () => {
+  const token = localStorage.getItem("token");; 
+  const allergiesData = allergies.value.map(allergy => {
+    let scale = null;
+
+  // Update the scale based on severity
+  if (allergy.severity === 'intolerance') {
+    scale = 0;
+  } else if (allergy.severity === 'mild') {
+    scale = 1;
+  } else if (allergy.severity === 'moderate') {
+    scale = 2;
+  } else if (allergy.severity === 'strong') {
+    scale = 3;
+  }   
+  
+  return {
+    name: allergy.name,
+    scale: scale
+  };
+  });
+
+  console.log("Sending this data:", allergiesData);
+
+  try {
+    const response = await axios.post('http://localhost:5000/save_allergy', 
+      { allergies: allergiesData },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    console.log(response.data.message); 
+  } catch (error) {
+    console.error('Error saving allergies:', error.response?.data?.message || error.message);
+  }
+};
+
+
 
 //search functionality
 const searchQuery = ref("");
@@ -46,9 +84,6 @@ const filteredAllergies = computed(() => {
     : [];
 });
 
-const toggleRadio = (allergy, severity) => {
-  allergy.severity = allergy.severity === severity ? "" : severity; 
-};
 
 const applyAllAllergies = () => {
   allergies.value.forEach(allergy => {
@@ -65,40 +100,34 @@ const resetAllAllergies = () => {
   });
 };
 
+
+
+// codes used for searching functionality
 const searchIndex = ref(0);
 const highlightRow = ref(0);
-
 const searchNext = () => {
   if (searchIndex.value < filteredAllergies.value.length - 1) {
     searchIndex.value++;
   } else {
-    searchIndex.value = 0; // loop back
+    searchIndex.value = 0; 
   }
   highlightRow.value = searchIndex.value;
 };
-
 const searchPrev = () => {
   if (searchIndex.value > 0) {
     searchIndex.value--;
   } else {
-    searchIndex.value = filteredAllergies.value.length - 1; // loop back
+    searchIndex.value = filteredAllergies.value.length - 1;
   }
   highlightRow.value = searchIndex.value;
 };
-
 </script>
 
 <template>
   <Modal v-show="isModalVisible" @close="closeModal"/>
 
   <h1>Step 1: Select Your Allergies/Dietary Restrictions</h1>
-      <div>
-    <ul v-if="filteredAllergies.length">
-      <li v-for="(allergy, index) in filteredAllergies" :key="index">
-      </li>
-    </ul>
-    <p v-else>No allergies found</p>
-  </div>
+  
 
   <div class="allergy-container">
     <div class="controls">
@@ -106,11 +135,13 @@ const searchPrev = () => {
       <button class="btn" @click="searchPrev">Prev</button>
       <button class="btn" @click="searchNext">Next</button>
       <span v-if="filteredAllergies.length">{{ searchIndex + 1 }}/{{ filteredAllergies?.length || 0 }}</span> 
-      <span v-else>No Allergies found</span>
+      <span v-else>No Allergies Found</span>
     </div>
+
     <div class="actions">
       <button class="btn apply" @click="applyAllAllergies">Apply All</button>
       <button class="btn reset" @click="resetAllAllergies">Reset All</button>
+      <button class="btn save" @click="saveAllergies">Test Save</button>
     </div>
 
     <p>{{ allergies.filter(a => a.selected).length }} allergies applied</p>
@@ -140,10 +171,9 @@ const searchPrev = () => {
 
   <Card></Card>
 </template>
-
-<!--TODO: we need to take this information and send it to the backend and cross-check it with a mock menu?
-          or we really need to figure out where to get a comprehensive allergen database-->
  
+
+
 <style scoped>
 .allergy-container {
   padding: 20px;
@@ -170,5 +200,3 @@ const searchPrev = () => {
   background-color: yellow;
 }
 </style>
-
-<!--reference: https://www.google.com/search?q=how+to+implement+a+checklist+in+vue&sca_esv=2100fb941db67f3a&ei=6ZkqZ8fcKLqHptQPxqS4kAE&ved=0ahUKEwiH9ZbYnMaJAxW6g4kEHUYSDhIQ4dUDCBA&uact=5&oq=how+to+implement+a+checklist+in+vue&gs_lp=Egxnd3Mtd2l6LXNlcnAiI2hvdyB0byBpbXBsZW1lbnQgYSBjaGVja2xpc3QgaW4gdnVlMgUQIRigATIFECEYoAEyBRAhGKABMgUQIRifBTIFECEYnwUyBRAhGJ8FMgUQIRifBTIFECEYnwVIwQ5QqglYsQpwBHgBkAEAmAGDAaABpAKqAQMyLjG4AQPIAQD4AQGYAgegArECwgIKEAAYsAMY1gQYR8ICBhAAGBYYHsICCxAAGIAEGIYDGIoFwgIIEAAYgAQYogSYAwCIBgGQBgiSBwM2LjGgB8YV&sclient=gws-wiz-serp-->

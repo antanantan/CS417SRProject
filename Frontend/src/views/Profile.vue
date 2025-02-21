@@ -4,40 +4,42 @@ import {ref, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 
 const username = ref('');
+const allergies = ref([]);
 const router = useRouter(); 
 const errorMessage = ref('');
 
+// function to grab profile information from backend based on token
 const fetchProfile = async () => {
-
-  const token = localStorage.getItem('token'); //retrieves token from the local storage
-
+  const token = localStorage.getItem('token');
     if (!token) {
-      errorMessage.value = 'You are not logged in';
+      errorMessage.value = 'You are not logged in.';
       await router.push('/login');
       return;
     } 
-
-    try{
+    try {
     const response = await axios.get('http://localhost:5000/profile', {
-      headers: { Authorization: `Bearer ${token}` }, //sends token in header.
+      headers: { Authorization: `Bearer ${token}` }, 
   });
 
   if (response.data.username) {
       username.value = response.data.username;
+      if (response.data.allergies) {
+        allergies.value = response.data.allergies;
+      }
+      else {
+        console.warn('User has no listed allergies.', response.data);
+      }
     } else {
       console.warn('No username returned:', response.data);
       username.value = null;
     }
 } catch (error) {
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token'); // Expired token
+      localStorage.removeItem('token'); 
       errorMessage.value = 'Your session has expired. Please log in again.';
       await router.push('/login');
-    } else {
-      errorMessage.value = 'Failed to load profile';
-    }
-    username.value = null;
-  }
+    } else {errorMessage.value = 'Failed to load profile';}
+    username.value = null;}
 }; 
 
 const logout = () => {
@@ -48,6 +50,11 @@ const logout = () => {
 }
 
 onMounted(fetchProfile);
+
+const allergyPage = () => {
+  router.push('/allergy_list'); 
+};
+
 </script>
 
 <template>
@@ -59,6 +66,13 @@ onMounted(fetchProfile);
     <h1>You are not logged in</h1>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   </div>
+
+  <button @click="allergyPage">Go To Order</button>
+
+  <ul>
+    <li v-for="(allergy, index) in allergies" :key="index">{{ allergy }}</li>
+  </ul>
+
 </template>
 
 <style scoped>
