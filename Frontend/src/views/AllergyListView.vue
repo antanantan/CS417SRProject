@@ -43,7 +43,7 @@ const saveAllergies = async () => {
   const allergiesData = allergies.value.map(allergy => {
     let scale = null;
 
-  // Update the scale based on severity
+// Update the scale based on severity
   if (allergy.severity === 'intolerance') {
     scale = 0;
   } else if (allergy.severity === 'mild') {
@@ -53,12 +53,16 @@ const saveAllergies = async () => {
   } else if (allergy.severity === 'strong') {
     scale = 3;
   }   
-  
   return {
     name: allergy.name,
     scale: scale
   };
-  });
+  }).filter(allergy => allergy.scale !== null);
+  if (allergiesData.length === 0) {
+    console.log("Empty list.");
+    return; 
+  }
+
 
   console.log("Sending this data:", allergiesData);
 
@@ -160,10 +164,10 @@ const searchPrev = () => {
         <tr v-for="(allergy, index) in filteredAllergies" :key="allergy.id"
         :class="{ highlighted: index === highlightRow }">
           <td>{{ allergy.name }}</td>
-          <td><input type="radio" value="'intolerance'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"</td>
-          <td><input type="radio" value="'mild'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"></td>
-          <td><input type="radio" value="'moderate'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"></td>
-          <td><input type="radio" value="'strong'" v-model="allergy.severity" @change="allergy.selected = !!allergy.severity"></td>
+          <td><input type="radio" value="intolerance" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
+          <td><input type="radio" value="mild" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
+          <td><input type="radio" value="moderate" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
+          <td><input type="radio" value="strong" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
         </tr>
       </tbody>
     </table>
