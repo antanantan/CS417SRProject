@@ -28,7 +28,6 @@ const login = async () => {
   if (response.data.token) {
     const token = response.data.token;
     console.log("Logged in as", current_username.value);
-
     localStorage.setItem('token', token);
     router.push('/profile');
 
