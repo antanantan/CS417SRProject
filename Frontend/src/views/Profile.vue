@@ -57,18 +57,21 @@ const allergyPage = () => {
 
 </script>
 
+
+
 <template>
   <div v-if="username">
     <h1>Welcome, {{ username }}</h1>
-    <button @click="logout">Logout</button>
   </div>
   <div v-else>
-    <h1>You are not logged in</h1>
+    <h1>You are not logged in. Please log in or create an account to continue.</h1>
     <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   </div>
 
+  <button @click="logout">Logout</button>
   <button @click="allergyPage">Go To Order</button>
 
+  <h2> {{ username }}'s allergies...</h2>
   <ul>
     <li v-for="(allergy, index) in allergies" :key="index">{{ allergy }}</li>
   </ul>
@@ -76,9 +79,28 @@ const allergyPage = () => {
 </template>
 
 <style scoped>
+h2 {
+  font-size: large;
+  display: flex;
+  justify-content: center;
+  font-weight: bold;
+}
 .error-message {
   color: red;
   font-weight: bold;
   margin-top: 10px;
+}
+button {
+  background:green;
+  font-weight:bold;
+  border-radius: 10px;
+  margin: 10px;
+  color: white;
+}
+button:hover {
+  background: darkgreen;
+}
+ul {
+  margin-left: 10%;
 }
 </style>

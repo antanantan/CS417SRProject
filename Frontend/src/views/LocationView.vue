@@ -11,16 +11,14 @@ import Card from '@/components/Steps_Bottom.vue';
       <button type="submit">Submit</button>
     </form>
   <br>
+  <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <br>
 
 <div class="map_container">
   <iframe v-if="map_displayed" :src="map_displayed"></iframe>
 </div>
 
-<br>
-<div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-<p style="display: flex; justify-content: center;">space for additional filters? like type of food? low priority implementation</p>
-
-<div class="dropdown">
+<!--div class="dropdown">
   <label for="cuisine">Type of Food: </label>
   <b-dropdown id="dropdown-1" text="Dropdown Button" class="m-md-2">
     <b-dropdown-item>American</b-dropdown-item>
@@ -29,7 +27,7 @@ import Card from '@/components/Steps_Bottom.vue';
     <b-dropdown-item>Italian</b-dropdown-item>
     <b-dropdown-item>Thai</b-dropdown-item>
   </b-dropdown>
-</div>
+</div-->
 
   <Card></Card>
 </template>
@@ -57,10 +55,10 @@ export default {
 
       try {
         const response = await axios.post('http://127.0.0.1:5000/location', {zip_code: this.zip_entered,});
-        this.map_displayed = `http://127.0.0.1:5000${response.data.map_url}?t=${new Date().getTime()}`;  
-        }
+        if (response.data.error) {this.errorMessage = response.data.error;} 
+        else {this.map_displayed = `http://127.0.0.1:5000${response.data.map_url}?t=${new Date().getTime()}`;}}
       catch (error) {
-        this.errorMessage.value = 'error generating map.';
+        this.errorMessage = 'error generating map.';
         console.error(error);
       }
     },
@@ -98,7 +96,8 @@ iframe {
   color: red;
   font-weight: bold;
   display:flex;
-  text-align: center;
+  justify-content: center;
+  font-size: large;
 }
 
 </style>
