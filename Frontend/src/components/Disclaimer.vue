@@ -48,10 +48,10 @@ const close = (closeandNavigate) => {
 
 </script>
 
-<style>
+<style scoped>
   .modal-backdrop {
     position: fixed;
-    top: 0;
+    top: 10;
     bottom: 0;
     left: 0;
     right: 0;
@@ -67,8 +67,8 @@ const close = (closeandNavigate) => {
     display: flex;
     flex-direction: column;
     width: 50%;
-    max-height: 90vh;
-    min-height: 250px;
+    max-height: 60vh;
+    min-height: 100px;
     overflow: hidden; 
     position: fixed;
     top: 50%;
@@ -76,8 +76,6 @@ const close = (closeandNavigate) => {
     transform: translate(-50%, -50%);
     padding: 20px;
   }
-
-
   .modal-header {
     position: relative;
     border-bottom: 1px solid #eeeeee;
@@ -87,7 +85,6 @@ const close = (closeandNavigate) => {
     justify-content: center;
     padding: 15px;
   }
-
   .modal-footer {
     border-top: 1px solid #eeeeee;
     display: flex;
@@ -109,8 +106,9 @@ const close = (closeandNavigate) => {
 
   .modal-body {
     position: relative;
-    padding: 20px 10px;
+    max-height: 60vh;
     font-size: medium;
+    text-align: center;
   }
 
   .btn-green {

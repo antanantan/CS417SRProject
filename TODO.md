@@ -6,15 +6,16 @@ Allergen Profile
   - ~~create allergen profile based on currently logged in user~~ 
   - add ability to filter menu based on allergy profile 
   - fix allergy page interface
+  - allow guest profile feature
 
 User Profile
-  - allow user to SECURELY reset their password
+  - allow user to SECURELY reset their password (NOTE: aso of right now, user can only reset their password if they are logged in)
   - ~~display allergen information to the profile page~~ 
   - fix profile page interface 
   - add ability to edit allergen profile on the profile page?
 
 Payment Feature
-  - start implementing a pseudo-payment feature
+  - ~~start implementing a pseudo-payment feature~~
 
 Location View
   - add functionality to filter restaurants by type, cuisine, price range, etc.
