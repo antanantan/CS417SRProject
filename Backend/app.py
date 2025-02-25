@@ -153,6 +153,7 @@ def password_reset():
 @app.route('/location', methods=['POST'])
 def create_map(country='US'):
     zip_code = request.json.get('zip_code')
+    cuisine = request.json.get('cuisine')
 
     if not zip_code:
         return jsonify({"error": "please enter a valid zip code"}), 400
@@ -171,6 +172,9 @@ def create_map(country='US'):
             Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
             Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
         ).all()
+
+        if cuisine:
+            query = query.filter_by(cuisine=cuisine)
 
         for restaurant in restaurants:
             restaurant_location = [restaurant.latitude, restaurant.longitude]

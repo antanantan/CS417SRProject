@@ -18,17 +18,6 @@ import Card from '@/components/Steps_Bottom.vue';
   <iframe v-if="map_displayed" :src="map_displayed"></iframe>
 </div>
 
-<!--div class="dropdown">
-  <label for="cuisine">Type of Food: </label>
-  <b-dropdown id="dropdown-1" text="Dropdown Button" class="m-md-2">
-    <b-dropdown-item>American</b-dropdown-item>
-    <b-dropdown-item>Chinese</b-dropdown-item>
-    <b-dropdown-item>French</b-dropdown-item>
-    <b-dropdown-item>Italian</b-dropdown-item>
-    <b-dropdown-item>Thai</b-dropdown-item>
-  </b-dropdown>
-</div-->
-
   <Card></Card>
 </template>
 
