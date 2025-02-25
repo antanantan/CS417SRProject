@@ -46,29 +46,38 @@ const continueAsGuest = () => {
 </template>
 
 <script>
-export default {
-  data() {
-    return {
-      new_email: '',
-      errorMessage: '',
-    };
-  },
-  methods: {
-    async register() {
-      try {
-        const response = await axios.post('http://127.0.0.1:5000/register', {username: this.new_username, email: this.new_email, password: this.new_password,});
+const email = ref('');
+const errorMessage = ref('');
+const newPassword = ref('');  
+const resetMessage = ref('');  
+const resetSuccess = ref(false); 
 
-        if (response.data.message === 'Account created successfully') {
-          this.$router.push('/login');  
-        }
-      } 
-      catch (error) {
-        if (error.response && error.response.data) {
-          this.errorMessage = error.response.data.message || 'something went wrong';
-        }
-      }
-    },
-  },
+const resetPassword = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/password_reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.value, 
+        new_password: newPassword.value,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      resetMessage.value = data.message;
+      resetSuccess.value = true;
+    } else {
+      resetMessage.value = data.message;
+      resetSuccess.value = false;
+    }
+  } catch (error) {
+    resetMessage.value = 'An error occurred. Please try again.';
+    resetSuccess.value = false;
+  }
 };
 </script>
 

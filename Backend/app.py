@@ -153,40 +153,49 @@ def password_reset():
 @app.route('/location', methods=['POST'])
 def create_map(country='US'):
     zip_code = request.json.get('zip_code')
+    cuisine = request.json.get('cuisine')
 
     if not zip_code:
         return jsonify({"error": "please enter a valid zip code"}), 400
-
-    geolocator = Nominatim(user_agent="app")
-    location = geolocator.geocode(f"{zip_code}, {country}")
-    
-    map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
+    try:
+        geolocator = Nominatim(user_agent="app")
+        location = geolocator.geocode(f"{zip_code}, {country}")
+        if not location:
+            return jsonify({"error": "Could not find location for the given zip code."}), 400
+        
+        map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
 
 # marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
 
 # adjust as needed
-    restaurants = Restaurant.query.filter(
-        Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
-        Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
-    ).all()
+        restaurants = Restaurant.query.filter(
+            Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
+            Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
+        ).all()
 
-    for restaurant in restaurants:
-        restaurant_location = [restaurant.latitude, restaurant.longitude]
-        restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
-        
-        folium.Marker(
-            restaurant_location,
-            popup=folium.Popup(restaurant_info, max_width=300)
-        ).add_to(map)
+        if cuisine:
+            query = query.filter_by(cuisine=cuisine)
 
-    map_path = os.path.join('static', 'map.html')
+        for restaurant in restaurants:
+            restaurant_location = [restaurant.latitude, restaurant.longitude]
+            restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
+            
+            folium.Marker(
+                restaurant_location,
+                popup=folium.Popup(restaurant_info, max_width=300)
+            ).add_to(map)
 
-    map.save(map_path)
-    print("request received!")
+        map_path = os.path.join('static', 'map.html')
 
-    response = jsonify({"map_url": "/static/map.html"})
-    response.headers.add('Access-Control-Allow-Origin', '*')
-    return response
+        map.save(map_path)
+        print("request received!")
+
+        response = jsonify({"map_url": "/static/map.html"})
+        response.headers.add('Access-Control-Allow-Origin', '*')
+        return response, 200
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
