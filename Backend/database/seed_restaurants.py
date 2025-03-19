@@ -1,3 +1,4 @@
+import json
 from database.db_models import db, Restaurant
 
 def seed_restaurants():
@@ -10,7 +11,16 @@ def seed_restaurants():
         print("🗑️ Restaurant table cleared!")
 
         restaurants = [
-            {"name": "JP's Diner", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.221084063951835, "longitude": -73.2458533422555, "phone": "+12033966540", "category": "Diner", "price_range": "$", "image_filename": None},
+            {"name": "JP's Diner", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.221084063951835, "longitude": -73.2458533422555, "phone": "+12033966540", "category": "Diner", "price_range": "$", "image_filename": "jpsdiner.jpg",
+            "hours": json.dumps({
+                "Monday": "Closed",
+                "Tuesday": "10:00 AM - 10:00 PM",
+                "Wednesday": "10:00 AM - 10:00 PM",
+                "Thursday": "10:00 AM - 12:00 AM",
+                "Friday": "10:00 AM - 12:00 AM",
+                "Saturday": "10:00 AM - 6:00 PM",
+                "Sunday": "10:00 AM - 6:00 PM"
+            })},
             {"name": "63's", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.221324131985746, "longitude": -73.2417259529118, "phone": None, "category": "Self service restaurant", "price_range": "$", "image_filename": None},
 # beginning of new items
             {"name": "Linda's", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.220993050671055, "longitude": -73.24309661708993, "phone": None, "category": "Self service restaurant", "price_range": "$", "image_filename": None},
@@ -30,10 +40,11 @@ def seed_restaurants():
                 zipcode=restaurant["zipcode"],
                 latitude=restaurant["latitude"],
                 longitude=restaurant["longitude"],
-                phone=restaurant["phone"],
-                category=restaurant["category"],
-                price_range=restaurant["price_range"],
-                image_filename=restaurant["image_filename"],
+                phone=restaurant["phone"] if restaurant.get("phone") else None,
+                category=restaurant["category"] if restaurant.get("category") else None,
+                price_range=restaurant["price_range"] if restaurant.get("price_range") else None,
+                image_filename=restaurant["image_filename"] if restaurant.get("image_filename") else None,
+                hours=json.dumps(restaurant["hours"]) if restaurant.get("hours") else None,
             )
             db.session.add(new_restaurant)
 

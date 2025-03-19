@@ -53,6 +53,7 @@ class Restaurant(db.Model):
     phone = db.Column(db.String, nullable=True)
     category = db.Column(db.String, nullable=True)
     price_range = db.Column(db.String, nullable=True)
+    hours = db.Column(db.String, nullable=True)
     image_filename = db.Column(db.String, nullable=True)
 
     menus = db.relationship('Menu', back_populates='restaurant', cascade="all, delete")
@@ -60,31 +61,40 @@ class Restaurant(db.Model):
 class Menu(db.Model):
     __tablename__ = 'menus'
     id = db.Column(db.Integer, primary_key=True)
-    store_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
     category = db.Column(db.String, nullable=False)
+    sub_category = db.Column(db.String, nullable=True)
     name = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
-    ingredients = db.Column(db.Text, nullable=False)  # comma-separated ingredients
-    allergens = db.Column(db.Text)  # comma-separated allergens
-    description = db.Column(db.Text)
-    image_filename = db.Column(db.String)
+    ingredients = db.Column(db.Text, nullable=True)  # comma-separated ingredients
+    allergens = db.Column(db.Text, nullable=True)  # comma-separated allergens
+    description = db.Column(db.Text, nullable=True)
+    image_filename = db.Column(db.String, nullable=True)
 
     restaurant = db.relationship('Restaurant', back_populates='menus')
     menu_options = db.relationship('MenuOptionMapping', back_populates='menu', cascade="all, delete")
 
-    
-class MenuOption(db.Model):
-    __tablename__ = 'menu_options'
+class MenuOptionGroup(db.Model):
+    __tablename__ = 'menu_option_groups'
     id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String, nullable=False)
+
+    option_items = db.relationship('MenuOptionItem', back_populates='group', cascade="all, delete")
+    menu_mappings = db.relationship('MenuOptionMapping', back_populates='option', cascade="all, delete")
+
+class MenuOptionItem(db.Model):
+    __tablename__ = 'menu_option_items'
+    id = db.Column(db.Integer, primary_key=True)
+    group_id = db.Column(db.Integer, db.ForeignKey('menu_option_groups.id'), nullable=False)
     name = db.Column(db.String, nullable=False)
     extra_price = db.Column(db.Float, nullable=False)
 
-    menu_mappings = db.relationship('MenuOptionMapping', back_populates='option', cascade="all, delete")
+    group = db.relationship('MenuOptionGroup', back_populates='option_items')
 
 class MenuOptionMapping(db.Model):
     __tablename__ = 'menu_option_mapping'
     menu_id = db.Column(db.Integer, db.ForeignKey('menus.id'), primary_key=True)
-    option_id = db.Column(db.Integer, db.ForeignKey('menu_options.id'), primary_key=True)
+    option_group_id = db.Column(db.Integer, db.ForeignKey('menu_option_groups.id'), primary_key=True)
 
     menu = db.relationship('Menu', back_populates='menu_options')
-    option = db.relationship('MenuOption', back_populates='menu_mappings')
+    option = db.relationship('MenuOptionGroup', back_populates='menu_mappings')

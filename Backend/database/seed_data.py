@@ -10,7 +10,7 @@ def seed_db():
     try:
         seed_allergens()  
         seed_restaurants()  
-        # seed_menus()
+        seed_menus()
 
         print("✅ Database seeded successfully!")
 

@@ -1,14 +1,14 @@
 from flask import Flask
-from datetime import timedelta
-from flask import flash, jsonify, g, request, session, make_response
+from datetime import timedelta, datetime
+from flask import flash, jsonify, g, request, session, make_response, url_for
 from flask_cors import CORS
-import os, sqlite3, folium, pandas
+import os, sqlite3, folium, pandas, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu
+from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
 from database.seed_data import seed_db
 
 app = Flask(__name__)
@@ -250,8 +250,87 @@ def save_allergy():
     db.session.commit()
     return jsonify({"message": "Allergy information updated successfully."}), 200
 
+
+# endpoint for getting menu information
+@app.route('/api/menu', methods=['GET'])
+def get_menu():
+    restaurant = Restaurant.query.filter_by(name="JP's Diner").first()
+    
+    if not restaurant:
+        return jsonify({"error": "JP's Diner not found"}), 404
+
+    menu_items = Menu.query.filter_by(restaurant_id=restaurant.id).all()
+    menu_list = []
+    for item in menu_items:
+        # get all option mappings for the menu item
+        option_mappings = MenuOptionMapping.query.filter_by(menu_id=item.id).all()
+        
+        # change option mappings to a dictionary for easier access
+        option_groups = {}
+        for mapping in option_mappings:
+            option_group = MenuOptionGroup.query.get(mapping.option_group_id)
+            if not option_group:
+                continue
+            
+            # make option items a list for each group
+            if option_group.name not in option_groups:
+                option_groups[option_group.name] = []
+            
+            option_items = MenuOptionItem.query.filter_by(group_id=option_group.id).all()
+            for option_item in option_items:
+                option_groups[option_group.name].append({
+                    "name": option_item.name,
+                    "extra_price": option_item.extra_price
+                })
+
+        menu_list.append({
+            "id": item.id,
+            "name": item.name,
+            "category": item.category,
+            "sub_category": item.sub_category if item.sub_category else None,
+            "price": item.price,
+            "ingredients": item.ingredients.split(", "),
+            "allergens": item.allergens.split(", ") if item.allergens else [],
+            "description": item.description if item.description else None,
+            "image": url_for('static', filename=f"menu_img/{item.image_filename}", _external=True) if item.image_filename else None,
+            "options": option_groups  # put a list of option items for each group
+        })
+
+    # calculate open status for the restaurant
+    try:
+        hours = json.loads(restaurant.hours) if restaurant.hours else {}
+    except json.JSONDecodeError:
+        hours = {}
+    today = datetime.today().strftime('%A')
+    current_time = datetime.now().strftime('%I:%M %p')
+    status = "Closed"
+    if isinstance(hours, dict) and today in hours and "Closed" not in hours[today]:
+        try:
+            open_time, close_time = hours[today].split(" - ")
+            if open_time <= current_time <= close_time:
+                status = f"Open, Closes {close_time}"
+            else:
+                status = f"Closed, Opens {open_time}"
+        except ValueError:
+            status = "Unknown hours format"
+
+    return jsonify({
+        "restaurant": {
+            "id": restaurant.id,
+            "name": restaurant.name,
+            "address": restaurant.address,
+            "phone": restaurant.phone,
+            "category": restaurant.category if restaurant.category else None,
+            "price_range": restaurant.price_range if restaurant.price_range else None,
+            "hours": hours,
+            "status": status,
+            "image": url_for('static', filename=f"restaurant_img/{restaurant.image_filename}", _external=True) if restaurant.image_filename else None
+        },
+        "menu": menu_list
+    })
+
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0')
+    app.run(debug=True, host='0.0.0.0', port=5000)
 
 
 
