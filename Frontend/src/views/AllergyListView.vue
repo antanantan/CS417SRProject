@@ -2,6 +2,7 @@
 import Card from '@/components/Steps_Bottom.vue';
 import {useRouter} from "vue-router";
 import Modal from "@/components/Disclaimer.vue"
+import api from '@/api/auth.js';
 import { ref, computed, onMounted} from 'vue';
 import axios from "axios";
 
@@ -21,15 +22,13 @@ const allergies = ref([]);
 const loadAllergies = async () => {
   const token = localStorage.getItem("jwt"); 
   try {
-    const response = await axios.get('http://localhost:5000/generate_list', {
+    const response = await api.get('/allergens', {
       headers: { Authorization: `Bearer ${token}` }
     });
+    console.log("API Response:", response.data);
 
-    allergies.value = response.data.allergies.map(item => ({
-      ...item,
-      severity: '',  
-      selected: false  
-    }));
+    allergenGroups.value = data.allergen_groups;
+    allergenItems.value = data.allergen_items;
   } catch (error) {
     console.error('Error loading allergies:', error);
   }

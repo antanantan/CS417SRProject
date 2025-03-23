@@ -62,7 +62,7 @@ class Menu(db.Model):
     __tablename__ = 'menus'
     id = db.Column(db.Integer, primary_key=True)
     restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
-    category = db.Column(db.String, nullable=False)
+    category = db.Column(db.String, nullable=True)
     sub_category = db.Column(db.String, nullable=True)
     name = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
@@ -77,7 +77,10 @@ class Menu(db.Model):
 class MenuOptionGroup(db.Model):
     __tablename__ = 'menu_option_groups'
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, nullable=False)
+    reference_key = db.Column(db.String, nullable=True, unique=True)
+    description = db.Column(db.String, nullable=False)
+    min_quantity = db.Column(db.Integer, nullable=False)
+    max_quantity = db.Column(db.Integer, nullable=False)
 
     option_items = db.relationship('MenuOptionItem', back_populates='group', cascade="all, delete")
     menu_mappings = db.relationship('MenuOptionMapping', back_populates='option', cascade="all, delete")
@@ -88,6 +91,7 @@ class MenuOptionItem(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('menu_option_groups.id'), nullable=False)
     name = db.Column(db.String, nullable=False)
     extra_price = db.Column(db.Float, nullable=False)
+    allergens = db.Column(db.String, nullable=True)
 
     group = db.relationship('MenuOptionGroup', back_populates='option_items')
 

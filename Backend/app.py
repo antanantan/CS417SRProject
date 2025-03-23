@@ -1,7 +1,7 @@
 from flask import Flask
 from datetime import timedelta, datetime
 from flask import flash, jsonify, g, request, session, make_response, url_for
-from flask_cors import CORS
+from flask_cors import CORS, cross_origin
 import os, sqlite3, folium, pandas, json
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
@@ -199,18 +199,20 @@ def create_map(country='US'):
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
-@app.route('/generate_list', methods=['GET'])
-def generate_list():
-    allergens = Allergen.query.all()
-    allergy_data = [
-        {
-            "id": allergen.id,
-            "name": allergen.name,
-            "selected": False,  
-            "severity": None  
-        }
-        for allergen in allergens]
-    return jsonify({"allergies": allergy_data}), 200
+@app.route('/api/allergens', methods=['GET'])
+@cross_origin(origins="http://localhost:3000")
+def get_allergens():
+    allergen_groups = [
+        {"id": group.id, "name": group.name} for group in AllergenGroup.query.all()
+    ]
+    
+    allergen_items = [
+        {"id": allergen.id, "name": allergen.name, "group_id": allergen.group_id}
+        for allergen in Allergen.query.all()
+    ]
+
+    return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
+
 
 @app.route('/save_allergy', methods=['POST'])
 @jwt_required()  
@@ -252,7 +254,9 @@ def save_allergy():
 
 
 # endpoint for getting menu information
+# later change it to '/api/menu/<restaurant_id>
 @app.route('/api/menu', methods=['GET'])
+@cross_origin(origins="http://localhost:3000")
 def get_menu():
     restaurant = Restaurant.query.filter_by(name="JP's Diner").first()
     
@@ -273,12 +277,12 @@ def get_menu():
                 continue
             
             # make option items a list for each group
-            if option_group.name not in option_groups:
-                option_groups[option_group.name] = []
+            if option_group.description not in option_groups:
+                option_groups[option_group.description] = []
             
             option_items = MenuOptionItem.query.filter_by(group_id=option_group.id).all()
             for option_item in option_items:
-                option_groups[option_group.name].append({
+                option_groups[option_group.description].append({
                     "name": option_item.name,
                     "extra_price": option_item.extra_price
                 })
@@ -286,10 +290,10 @@ def get_menu():
         menu_list.append({
             "id": item.id,
             "name": item.name,
-            "category": item.category,
+            "category": item.category if item.category else None,
             "sub_category": item.sub_category if item.sub_category else None,
             "price": item.price,
-            "ingredients": item.ingredients.split(", "),
+            "ingredients": item.ingredients.split(", ") if item.ingredients else [],
             "allergens": item.allergens.split(", ") if item.allergens else [],
             "description": item.description if item.description else None,
             "image": url_for('static', filename=f"menu_img/{item.image_filename}", _external=True) if item.image_filename else None,
@@ -322,7 +326,7 @@ def get_menu():
             "phone": restaurant.phone,
             "category": restaurant.category if restaurant.category else None,
             "price_range": restaurant.price_range if restaurant.price_range else None,
-            "hours": hours,
+            "hours": json.dumps(hours),
             "status": status,
             "image": url_for('static', filename=f"restaurant_img/{restaurant.image_filename}", _external=True) if restaurant.image_filename else None
         },

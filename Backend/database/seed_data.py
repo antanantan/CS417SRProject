@@ -9,8 +9,8 @@ def seed_db():
     """
     try:
         seed_allergens()  
-        seed_restaurants()  
-        seed_menus()
+        seed_restaurants("database/restaurants_menus.xlsx")  
+        seed_menus("database/restaurants_menus.xlsx")
 
         print("✅ Database seeded successfully!")
 
