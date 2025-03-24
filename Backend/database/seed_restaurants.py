@@ -1,42 +1,69 @@
+import json
+import pandas as pd
 from database.db_models import db, Restaurant
 
-def seed_restaurants():
+def seed_restaurants(file_path):
     """
-    Seed restaurants.
+    Read an Excel file and seed restaurants into the database.
     """
     try:
+        # read Excel file
+        df = pd.read_excel(file_path, sheet_name="restaurants", dtype=str)
+        
+        # delete ' from the beginning of the string if applicable
+        df = df.map(lambda x: x.lstrip("'") if isinstance(x, str) else x)
+
+        # clear restaurant table
         db.session.query(Restaurant).delete()
         db.session.flush()
         print("🗑️ Restaurant table cleared!")
 
-        restaurants = [
-            {"name": "JP's Diner", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.221084063951835, "longitude": -73.2458533422555, "phone": "+12033966540", "category": "Diner", "price_range": "$", "image_filename": None},
-            {"name": "63's", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.221324131985746, "longitude": -73.2417259529118, "phone": None, "category": "Self service restaurant", "price_range": "$", "image_filename": None},
-# beginning of new items
-            {"name": "Linda's", "address": "5151 Park Ave, Fairfield, CT 06825", "zipcode": "06825", "latitude": 41.220993050671055, "longitude": -73.24309661708993, "phone": None, "category": "Self service restaurant", "price_range": "$", "image_filename": None},
-            {"name": "Texas Roadhouse", "address": "524 Saw Mill Rd, West Haven, CT 06516", "zipcode": "06516", "latitude": 41.26876626494863, "longitude": -72.97658457647321, "phone": "+12039376222", "category": "Dine-in restaurant", "price_range": "$", "image_filename": None},
-            {"name": "Bonchon", "address": "170 College St, New Haven, CT 06510", "zipcode": "06510", "latitude": 41.35852219585518, "longitude": -72.92732000662564, "phone": "+12035072159", "category": "Dine-in restaurant", "price_range": "$$", "image_filename": None},
-            {"name": "Pret A Manger", "address": "4 Bryant Pk, New York, NY 10018", "zipcode": "10018", "latitude": 40.75412660177139, "longitude": -73.98523105085792, "phone": "+16464102071", "category": "Self service restaurant", "price_range": "$", "image_filename": None},
-            {"name": "Gusto Trattoria", "address": "255 Boston Post Rd, Milford, CT 06460", "zipcode": "06460", "latitude": 41.22202654726118, "longitude": -73.07294690359569, "phone": "+12038767464", "category": "Dine-in restaurant", "price_range": "$$$", "image_filename": None},
-            {"name": "Mecha Noodle Bar", "address": "1215 Post Rd, Fairfield, CT 06824", "zipcode": "06824", "latitude": 41.14315588504152, "longitude": -73.25367464777568, "phone": "+12032928222", "category": "Dine-in restaurant", "price_range": "$$$", "image_filename": None},
-            {"name": "Colony Grill", "address": "1520 Post Rd, Fairfield, CT 06824", "zipcode": "06824", "latitude": 41.14146723874369, "longitude": -73.25834169111461, "phone": "+12032591989", "category": "Dine-in restaurant", "price_range": "$$", "image_filename": None},
-            {"name": "Colony Grill", "address": "36 Broad St, Milford, CT 06460", "zipcode": "06460", "latitude": 41.221875168272504, "longitude": -73.05747449194841, "phone": "+12038761935", "category": "Dine-in restaurant", "price_range": "$$", "image_filename": None}
-        ]
+        # add restaurants to DB
+        for _, row in df.iterrows():
+            # if cell is empty, set it to None
+            name = row["name"]
+            category = row["category"] if pd.notna(row["category"]) else None
+            price_range = row["price_range"] if pd.notna(row["price_range"]) else None
+            address = row["address"]
+            zipcode = row["zipcode"]
+            phone = row["phone"] if pd.notna(row["phone"]) else None
+            image_filename = row["image_filename"] if pd.notna(row["image_filename"]) else None
+            
+            # convert latitude and longitude to float
+            if pd.notna(row["lattitude"]):
+                latitude = float(row["lattitude"])
+            else:
+                raise ValueError(f"Invalid latitude value: {row['lattitude']}")
+            if pd.notna(row["longtitude"]):
+                longitude = float(row["longtitude"])
+            else:
+                raise ValueError(f"Invalid longitude value: {row['longtitude']}")
 
-        for restaurant in restaurants:
+            # column names for days of the week
+            days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"]
+
+            # save opening hours as a dictionary (if empty, set to "Closed")
+            hours = {day.capitalize(): row[day] if pd.notna(row[day]) else "Closed" for day in days}
+
+            # if all values are "Closed", set hours to None
+            if all(value == "Closed" for value in hours.values()):
+                hours = None
+
             new_restaurant = Restaurant(
-                name=restaurant["name"],
-                address=restaurant["address"],
-                zipcode=restaurant["zipcode"],
-                latitude=restaurant["latitude"],
-                longitude=restaurant["longitude"],
-                phone=restaurant["phone"],
-                category=restaurant["category"],
-                price_range=restaurant["price_range"],
-                image_filename=restaurant["image_filename"],
+                name=name,
+                category=category,
+                price_range=price_range,
+                address=address,
+                zipcode=zipcode,
+                latitude=latitude,
+                longitude=longitude,
+                phone=phone,
+                image_filename=image_filename,
+                hours=json.dumps(hours)
             )
             db.session.add(new_restaurant)
 
+        # commit changes
         db.session.commit()
         print("✅ Restaurants inserted successfully!")
 
