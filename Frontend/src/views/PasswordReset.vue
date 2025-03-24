@@ -1,16 +1,11 @@
 <script setup>
 import { ref } from 'vue';
 import { useRouter } from 'vue-router';
+import axios from 'axios';
 
-const email = ref('');
-const password = ref('');
 const router = useRouter();
-
-const handleLogin = () => {
-  // Replace with actual login logic
-  console.log('Logging in with', email.value, password.value);
-  // Navigate to a different route if needed
-};
+const email = ref('');
+const errorMessage = ref('');
 
 const continueAsGuest = () => {
   router.push('/allergy_list'); 
@@ -31,7 +26,7 @@ const continueAsGuest = () => {
             v-model="email"
             type="text"
             id="email"
-            placeholder="Enter your email or username"
+            placeholder="Enter the email associated with your account."
             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:border-blue-500"
           />
         </div>
@@ -43,11 +38,48 @@ const continueAsGuest = () => {
           Submit
         </button>
       </form>
+
+      <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
     <!--this would be a good test to see if we can actually send things to an email address-->
     </div>
   </div>
 </template>
 
+<script>
+const email = ref('');
+const errorMessage = ref('');
+const newPassword = ref('');  
+const resetMessage = ref('');  
+const resetSuccess = ref(false); 
+
+const resetPassword = async () => {
+  try {
+    const response = await fetch('http://localhost:5000/password_reset', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: email.value, 
+        new_password: newPassword.value,
+      }),
+    });
+
+    const data = await response.json();
+
+    if (response.ok) {
+      resetMessage.value = data.message;
+      resetSuccess.value = true;
+    } else {
+      resetMessage.value = data.message;
+      resetSuccess.value = false;
+    }
+  } catch (error) {
+    resetMessage.value = 'An error occurred. Please try again.';
+    resetSuccess.value = false;
+  }
+};
+</script>
+
 <style scoped>
-/* Add any custom styles here */
 </style>

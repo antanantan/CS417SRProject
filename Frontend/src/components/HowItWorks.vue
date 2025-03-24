@@ -25,7 +25,6 @@ import { Icon } from '@iconify/vue';
         <p class="text-sm text-gray-500 mt-2">See only the items that match your dietary needs.</p>
       </div>
       
-    
       <div class="bg-white p-6 rounded-lg shadow-lg w-full sm:w-64 text-center hover:shadow-xl transition-shadow">
         <Icon icon="mdi:credit-card-check-outline" class="h-12 w-12 text-green-600 mx-auto mb-4" />
         <h3 class="text-xl font-semibold text-gray-700">Secure Ordering</h3>

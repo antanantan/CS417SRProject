@@ -1,13 +1,10 @@
-<!--how to use icons T-T -->
-<!-- how to make navigation bar... NAVIGABLE??-->
 <script setup>
 import { GrowBottomNavigation } from "bottom-navigation-vue";
 import "bottom-navigation-vue/dist/style.css";
 import { Icon } from '@iconify/vue';
-import {RouterLink, useRouter, useRoute } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { ref, watch} from 'vue';
 
-const router = useRouter(); 
 const route = useRoute(); 
 const selectedOption = ref(route.path);
 
@@ -26,7 +23,7 @@ watch(route, (newRoute) => {
 </script>
 
 <template>
-  <div class="bottom-navigation">
+  <div class="bottom-navigation z-50 fixed inset-x-0 bottom-0">
     <GrowBottomNavigation 
     v-model="selectedOption" 
     :options="options"

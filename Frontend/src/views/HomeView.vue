@@ -1,14 +1,14 @@
 <script setup>
-import Disclaimer from '@/components/Disclaimer.vue';
 import Hero from '@/components/Hero.vue';
 import HomeCards from '@/components/HomeCards.vue';
 import HowItWorks from '@/components/HowItWorks.vue';
 </script>
 
+<!--we should have a function to create an account on this homepage (i don't know why we didn't already have one)-->
 <template>
-  <!--Disclaimer is there for testing purposes. Remove after successful implementation.-->
-  <Disclaimer/>
   <Hero/>
   <HomeCards/>
+  <h1>Ready to Eat Well? <a href="/create" style="color:palevioletred"> Start Here.</a></h1>
+  <!-- above link is just a placeholder for the actual account creation-->
   <HowItWorks/>
 </template>

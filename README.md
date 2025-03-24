@@ -1,5 +1,20 @@
 # CS417SRProject
 
+## Run Instructions:
+
+1) cd into the "Frontend" folder.
+2) run "npm run dev".
+
+backend
+
+1) cd backend
+2) python3 -m venv venv
+3) source venv/bin/activate (mac) | venv\Scripts\activate (windows)
+5) pip install -r requirements.txt
+
+
+## Notes for Devs
+
 Vue Router is already installed in this application.
 
 If you are going to make adjustments, I think the only things you have to edit are in the /src and /public folders.
@@ -22,8 +37,4 @@ in your Terminal. Any updates you save to the program will update in real time w
 
 [VSCode](https://code.visualstudio.com/) + [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 See [Vite Configuration Reference](https://vite.dev/config/).
-
-
-This is a test of the Branch feature, so that we can each do our own development and then compare versions and merge what we can to the main branch.
-
 
