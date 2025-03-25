@@ -221,7 +221,7 @@ const proceedToCheckout = () => {
     <!-- Center Column (full width in phones) -->
     <div class="w-full md:w-2/3 lg:w-1/2">
       <!-- Search & Allergy Filter Container -->
-      <div class="sticky top-20 z-40 flex flex-col md:flex-row justify-center items-center w-full mx-auto gap-3 p-3">
+      <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3">
         <!--  Search Box -->
         <div class="flex items-center !bg-white border-1 border-green-700 rounded-full p-1 flex-grow w-full ">
           <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 m-2 flex-shrink-0" />
@@ -233,9 +233,9 @@ const proceedToCheckout = () => {
         </div>
 
         <!-- Allergy Filter ON/OFF Button-->
-        <button @click="toggleAllergyFilter" class="flex items-center p-1 w-48 rounded-full border-1 flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
+        <button @click="toggleAllergyFilter" class="flex items-center p-1 md:w-48 rounded-full border-1 flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
           <Icon icon="mdi:food-allergy" class="w-5 h-5 m-2 flex-shrink-0" />
-          Allergy Filter: {{ allergyFilterOn ? 'ON' : 'OFF' }}
+          <span class="hidden md:block">Allergy Filter: {{ allergyFilterOn ? 'ON' : 'OFF' }}</span>
         </button>
       </div>
 
