@@ -3,16 +3,16 @@ import { ref, computed, onMounted} from "vue";
 import { Icon } from "@iconify/vue";
 import api from "@/api/auth.js";
 
-// `v-model` の受け取り
+// get 'v-model'
 const props = defineProps(["modelValue"]);
 const emit = defineEmits(["update:modelValue"]);
 
-// アレルギーデータ
+// allergen data
 const allergenGroups = ref([]);
 const allergenItems = ref([]);
 
-// API からアレルギーデータを取得
-const fetchAllergyData = async () => {
+// get allergen data from backend
+const fetchAllergenData = async () => {
   try {
     const response = await api.get("/allergens");
     allergenGroups.value = response.data.allergen_groups || [];
@@ -25,7 +25,7 @@ const fetchAllergyData = async () => {
 };
 
 // 初回マウント時にデータ取得
-onMounted(fetchAllergyData);
+onMounted(fetchAllergenData);
 
 // 検索機能
 const searchQuery = ref("");

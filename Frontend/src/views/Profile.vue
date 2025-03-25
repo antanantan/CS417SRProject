@@ -1,6 +1,7 @@
 <script setup>
 import axios from 'axios';
 import {ref, onMounted} from 'vue';
+import api from '@/api/auth.js';
 import { useRouter } from 'vue-router';
 
 const username = ref('');
@@ -21,7 +22,7 @@ const fetchProfile = async () => {
       return;
     } 
     try {
-    const response = await axios.get('http://localhost:5000/profile', {
+    const response = await api.get('/user/profile', {
       headers: { Authorization: `Bearer ${token}` }, 
   });
 
@@ -49,7 +50,7 @@ const fetchProfile = async () => {
 
 const resetPassword = async () => {
   try {
-    const response = await fetch('http://localhost:5000/password_reset', {
+    const response = await fetch('/auth/password_reset', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

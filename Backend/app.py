@@ -49,7 +49,7 @@ def close_connection(exception=None):
     db.session.remove()
 
 # function for handling account creation
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/auth/register', methods=['GET', 'POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
@@ -85,7 +85,7 @@ def register():
 
 
 # TODO: handle unique characters as appropriate and fix whatever this is
-@app.route('/login', methods=['POST'])
+@app.route('/auth/login', methods=['POST'])
 def login():
 # pulling data from login form
     data = request.get_json()
@@ -105,7 +105,7 @@ def login():
     return jsonify({"message": "User not found. Please create an account first."}), 404
 
 # function for pulling profile information from current session
-@app.route('/profile', methods=['GET'])
+@app.route('/user/profile', methods=['GET'])
 @jwt_required() 
 def profile():
     user_id = get_jwt_identity()
@@ -122,14 +122,14 @@ def profile():
     return jsonify({"message": "User not found."}), 404
 
 # function to handle user logout
-@app.route('/logout', methods=['POST'])
+@app.route('/auth/logout', methods=['POST'])
 @jwt_required() # user must be logged in to log out
 def logout():
     return jsonify ({"message": "you have been logged out."}), 200 # frontend token gets deleted from local storage and redirect to login page
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
 #       not the most secure method right now but at least that page will have something to do on it
-@app.route('/password_reset', methods=['POST'])
+@app.route('/auth/password_reset', methods=['POST'])
 def password_reset():
     data = request.get_json()
     email = data.get('email')  # don't we need username too?
@@ -199,7 +199,7 @@ def create_map(country='US'):
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
-@app.route('/api/allergens', methods=['GET'])
+@app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_allergens():
     allergen_groups = [
@@ -214,7 +214,7 @@ def get_allergens():
     return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
 
 
-@app.route('/save_allergy', methods=['POST'])
+@app.route('/user/save_allergy', methods=['POST'])
 @jwt_required()  
 def save_allergy():
     user_id = get_jwt_identity()  
@@ -254,8 +254,8 @@ def save_allergy():
 
 
 # endpoint for getting menu information
-# later change it to '/api/menu/<restaurant_id>
-@app.route('/api/menu', methods=['GET'])
+# later change it to '/menu/<restaurant_id>
+@app.route('/menu', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_menu():
     restaurant = Restaurant.query.filter_by(name="JP's Diner").first()

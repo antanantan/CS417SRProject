@@ -2,6 +2,7 @@
 import { useRouter } from 'vue-router';
 import axios from 'axios';
 import { ref } from 'vue';
+import api from '@/api/auth.js';
 
 const router = useRouter();
 const current_username = ref('');
@@ -19,7 +20,7 @@ const continueAsGuest = () => {
 
 const login = async () => {
   try {
-    const response = await axios.post('http://localhost:5000/login', {
+    const response = await api.post('/auth/login', {
       username: current_username.value,
       password: current_password.value,
     }, { withCredentials: true }
