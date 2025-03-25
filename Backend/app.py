@@ -20,7 +20,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 # initialize extensions
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["http://127.0.0.1:3000", "http://localhost:3000"]}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'database', 'db.sqlite3')}"
@@ -126,6 +126,26 @@ def profile():
 @jwt_required() # user must be logged in to log out
 def logout():
     return jsonify ({"message": "you have been logged out."}), 200 # frontend token gets deleted from local storage and redirect to login page
+
+@app.route('/delete_account', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+    
+    try:
+        UserAllergy.query.filter_by(user_id=user.id).delete()
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": "Account deleted successfully."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error deleting account.", "error": str(e)}), 500
+
+
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
 #       not the most secure method right now but at least that page will have something to do on it

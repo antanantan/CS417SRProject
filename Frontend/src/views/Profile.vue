@@ -47,6 +47,34 @@ const fetchProfile = async () => {
     username.value = null;}
 }; 
 
+const deleteAccount = async () => {
+  if (confirm('Are you sure you want to delete your account?')) {
+    const token = localStorage.getItem('token');
+      await router.push('/login');
+      try {
+        const response = await axios.delete('http://localhost:5000/delete_account', {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.status === 200) {
+          alert(response.data.message);
+          localStorage.removeItem('token');
+          await router.push('/login');
+
+        } else {
+          alert('Failed to delete account. Please try again');
+          await router.push('/profile');
+        }
+      } catch (error) {
+        console.error('Error deleting the account:', error);
+        alert('An error occurred. Please try again.');
+        await router.push('/profile');
+      }
+      return;
+  }
+}
+
+
 const resetPassword = async () => {
   try {
     const response = await fetch('http://localhost:5000/password_reset', {
@@ -107,6 +135,8 @@ const allergyPage = () => {
 
     <button @click="logout">Logout</button>
     <button @click="allergyPage">Go To Order</button>
+    <button @click="deleteAccount" class="delete-button">Delete Account</button>
+
 
     <div class="password-reset-section">
       <h3>Reset Your Password</h3>
