@@ -3,15 +3,17 @@ import Card from '@/components/Steps_Bottom.vue';
 import { Icon } from '@iconify/vue';
 import { useRouter } from 'vue-router';
 import { ref, computed, onMounted} from "vue";
-import api from '@/api/auth.js';
+import { api, authApi } from '@/api/auth.js';
 import axios from "axios";
 import { svg } from 'leaflet';
+import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
 
 const router = useRouter();
 
 // make reactive variables for the selected restaurant and menu
 const restaurant = ref({ name: "", address: "", phone: "", category: "", price_range:"", status: "", hours: "{}", image:""});
 const menu = ref([]);
+// const userAllergies = ref([]); 
 
 // function to fetch menu data from the Flask API
 const fetchMenu = async () => {
@@ -26,45 +28,14 @@ const fetchMenu = async () => {
     console.error("Error fetching menu:", error);
   }
 };
-onMounted(fetchMenu);
 
-// functions to parse and display restaurant hours
-const hours = ref(null);
-const showHours = ref(false);
-const today = new Date().toLocaleString("en-US", { weekday: "long" });
-// parse hours from JSON string
-const parsedHours = computed(() => {
-  try {
-    return JSON.parse(restaurant.value.hours || "{}");
-
-  } catch (error) {
-    console.error("❌ Error parsing hours:", error);
-    return {};
-  }
-});
-// switch to show/hide hours
-const toggleHours = () => {
-  showHours.value = !showHours.value;
-};
-// sort hours by day of the week
-const sortedHours = computed(() => {
-  const weekOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
-
-  return Object.entries(parsedHours.value ?? {}).sort(
-    (a, b) => weekOrder.indexOf(a[0]) - weekOrder.indexOf(b[0])
-  );
+onMounted(() => {
+  fetchMenu();
+  // fetchUserAllergies();
 });
 
-
-const formattedPhone = computed(() => {
-  if (!restaurant.value.phone) return "";
-  return restaurant.value.phone.replace(/(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
-});
-
-
-// menu filtering by search and user allergens
+// menu filtering by search and user allergies
 const searchQuery = ref("");
-const userAllergens = ref(["Eggs", "Shrimp"]); // change later
 const allergyFilterOn = ref(true); 
 
 const toggleAllergyFilter = () => {
@@ -73,14 +44,14 @@ const toggleAllergyFilter = () => {
 
 const filteredMenu = computed(() => {
   if (!menu.value) return [];
+  const userAllergenNames = userAllergies.value.map(a => a.name);
 
   return menu.value.filter((item) => {
     const matchesName = item.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const hasAllergens = userAllergens.value.length > 0
-      ? item.allergens.some(allergen => userAllergens.value.includes(allergen))
-      : false; // no filter if user has no allergens
-
-    return matchesName && (!allergyFilterOn.value || !hasAllergens);
+    const hasAllergies = userAllergenNames.length > 0
+      ? item.allergens.some(allergenName => userAllergenNames.includes(allergenName))
+      : false;
+    return matchesName && (!allergyFilterOn.value || !hasAllergies);
   });
 });
 
@@ -122,6 +93,40 @@ const clearSearch = () => {
   searchQuery.value = "";
 };
 
+
+// functions to parse and display restaurant hours
+const hours = ref(null);
+const showHours = ref(false);
+const today = new Date().toLocaleString("en-US", { weekday: "long" });
+// parse hours from JSON string
+const parsedHours = computed(() => {
+  try {
+    return JSON.parse(restaurant.value.hours || "{}");
+
+  } catch (error) {
+    console.error("❌ Error parsing hours:", error);
+    return {};
+  }
+});
+// switch to show/hide hours
+const toggleHours = () => {
+  showHours.value = !showHours.value;
+};
+// sort hours by day of the week
+const sortedHours = computed(() => {
+  const weekOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+
+  return Object.entries(parsedHours.value ?? {}).sort(
+    (a, b) => weekOrder.indexOf(a[0]) - weekOrder.indexOf(b[0])
+  );
+});
+const formattedPhone = computed(() => {
+  if (!restaurant.value.phone) return "";
+  return restaurant.value.phone.replace(/(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
+});
+
+
+
 const selectedItem = ref(null); // selected menu item for modal
 const selectedOptions = ref({});
 
@@ -157,7 +162,7 @@ const proceedToCheckout = () => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row justify-between gap-0 p-3 bg-neutral-50 my-16">
+  <div class="flex flex-col md:flex-row justify-between gap-0 p-3 bg-neutral-50">
     <!-- Left Column (hidden in phone screen) -->
     <div class="w-full md:w-1/3 lg:w-1/4">
       <div class="bg-white rounded-xl shadow-md m-3 overflow-hidden">
@@ -225,7 +230,7 @@ const proceedToCheckout = () => {
         <!--  Search Box -->
         <div class="flex items-center !bg-white border-1 border-green-700 rounded-full p-1 flex-grow w-full ">
           <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 m-2 flex-shrink-0" />
-          <input type="text" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:outline-none text-neutral-700 w-full" />
+          <input type="text" id="menu-search" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:outline-none text-neutral-700 w-full" />
           <span v-if="searchQuery && filteredMenu.length" class="mr-2 text-green-700 ">{{ searchIndex + 1 }}/{{ filteredMenu?.length || 0 }}</span>
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-up" @click="searchPrev" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-down" @click="searchNext" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />

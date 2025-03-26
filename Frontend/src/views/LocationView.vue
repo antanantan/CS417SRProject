@@ -1,5 +1,6 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
+import { api, authApi } from '@/api/auth.js';
 </script>
 
 <template>
@@ -43,9 +44,9 @@ export default {
       this.loading = true;
 
       try {
-        const response = await axios.post('http://127.0.0.1:5000/location', {zip_code: this.zip_entered,});
+        const response = await api.post('/location', {zip_code: this.zip_entered,});
         if (response.data.error) {this.errorMessage = response.data.error;} 
-        else {this.map_displayed = `http://127.0.0.1:5000${response.data.map_url}?t=${new Date().getTime()}`;}}
+        else {this.map_displayed = `${response.data.map_url}?t=${new Date().getTime()}`;}}
       catch (error) {
         this.errorMessage = 'error generating map.';
         console.error(error);

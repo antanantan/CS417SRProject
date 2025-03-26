@@ -49,7 +49,7 @@ def close_connection(exception=None):
     db.session.remove()
 
 # function for handling account creation
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/auth/register', methods=['GET', 'POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
@@ -85,7 +85,7 @@ def register():
 
 
 # TODO: handle unique characters as appropriate and fix whatever this is
-@app.route('/login', methods=['POST'])
+@app.route('/auth/login', methods=['POST'])
 def login():
 # pulling data from login form
     data = request.get_json()
@@ -105,7 +105,7 @@ def login():
     return jsonify({"message": "User not found. Please create an account first."}), 404
 
 # function for pulling profile information from current session
-@app.route('/profile', methods=['GET'])
+@app.route('/user/profile', methods=['GET'])
 @jwt_required() 
 def profile():
     user_id = get_jwt_identity()
@@ -122,12 +122,12 @@ def profile():
     return jsonify({"message": "User not found."}), 404
 
 # function to handle user logout
-@app.route('/logout', methods=['POST'])
+@app.route('/auth/logout', methods=['POST'])
 @jwt_required() # user must be logged in to log out
 def logout():
     return jsonify ({"message": "you have been logged out."}), 200 # frontend token gets deleted from local storage and redirect to login page
 
-@app.route('/delete_account', methods=['DELETE'])
+@app.route('/user/delete', methods=['DELETE'])
 @jwt_required()
 def delete_account():
     user_id = get_jwt_identity()
@@ -149,7 +149,7 @@ def delete_account():
 
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
 #       not the most secure method right now but at least that page will have something to do on it
-@app.route('/password_reset', methods=['POST'])
+@app.route('/auth/password_reset', methods=['POST'])
 def password_reset():
     data = request.get_json()
     email = data.get('email')  # don't we need username too?
@@ -219,7 +219,7 @@ def create_map(country='US'):
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
-@app.route('/api/allergens', methods=['GET'])
+@app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_allergens():
     allergen_groups = [
@@ -234,48 +234,69 @@ def get_allergens():
     return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
 
 
-@app.route('/save_allergy', methods=['POST'])
-@jwt_required()  
-def save_allergy():
-    user_id = get_jwt_identity()  
-    if not user_id:
-        return jsonify({"message": "Not logged in."}), 404  
-
-    data = request.get_json()
-    print("Received data:", data)
-    
-    allergies = data.get('allergies') 
-    if not allergies:
-        return jsonify({"message": "No allergies data found."}), 400
-
+@app.route('/user/allergies', methods=['GET', 'POST'])
+@jwt_required()
+def user_allergies():
+    user_id = get_jwt_identity()
     user = db.session.get(User, user_id)
     if not user:
-        return jsonify({"message": "User not found."}), 404
-    UserAllergy.query.filter_by(user_id=user.id).delete()
-    db.session.commit()
+        return jsonify({"message": "Not logged in or user not found."}), 404
 
-# add new allergy information
-    for allergy in allergies:
-        allergy_name = allergy.get("name")
-        scale = allergy.get("scale", '')  
-        if scale == None:
-            continue
-        if scale not in [0, 1, 2, 3]: 
-            return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+    if request.method == 'GET':
+        # return allergen names
+        allergies = (
+            db.session.query(UserAllergy, Allergen)
+            .join(Allergen, UserAllergy.allergen_id == Allergen.id)
+            .filter(UserAllergy.user_id == user.id)
+            .all()
+        )
+        result = [
+            {
+                'allergen_id': allergen.id,
+                'name': allergen.name,
+                'scale': ua.scale
+            }
+            for ua, allergen in allergies
+        ]
+        return jsonify(result), 200
+    
+    elif request.method == 'POST':
+        data = request.get_json()
+        print("Received data:", data)
+        allergies = data.get('allergies') 
+        if allergies is None:
+            return jsonify({"message": "No allergies data found."}), 400
 
-        allergen = Allergen.query.filter_by(name=allergy_name).first()
+        UserAllergy.query.filter_by(user_id=user.id).delete()
+        # db.session.commit()
 
-        if allergen:
-            user_allergy = UserAllergy(user_id=user.id, allergen_id=allergen.id, scale=scale)
-            db.session.add(user_allergy)
+        # if new allergies list is empty
+        if len(allergies) == 0:
+            db.session.commit()
+            return jsonify({"message": "Allergies cleared."}), 200
 
-    db.session.commit()
-    return jsonify({"message": "Allergy information updated successfully."}), 200
+        # add new allergy information
+        for allergy in allergies:
+            allergen_id = allergy.get("allergen_id")
+            scale = allergy.get("scale", '')  
+            if allergen_id is None or scale is None:
+                continue
+            if scale not in [0, 1, 2, 3]: 
+                return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+
+            allergen = db.session.get(Allergen, allergen_id)
+            if allergen:
+                ua = UserAllergy(user_id=user.id, allergen_id=allergen_id, scale=scale)
+                db.session.add(ua)
+
+        db.session.commit()
+        print("Committed successfully. Allergies count:", UserAllergy.query.filter_by(user_id=user.id).count())
+        return jsonify({"message": "Allergy information updated successfully."}), 200
 
 
 # endpoint for getting menu information
-# later change it to '/api/menu/<restaurant_id>
-@app.route('/api/menu', methods=['GET'])
+# later change it to '/menu/<restaurant_id>
+@app.route('/menu', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_menu():
     restaurant = Restaurant.query.filter_by(name="JP's Diner").first()
