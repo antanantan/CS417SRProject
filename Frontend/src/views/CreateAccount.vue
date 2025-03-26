@@ -1,7 +1,7 @@
 <script setup>
 import { ref} from 'vue';
 import { useRouter } from 'vue-router';
-import api from '@/api/auth.js';
+import { api, authApi } from '@/api/auth.js';
 import axios from 'axios';
 
 const router = useRouter();

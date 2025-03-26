@@ -214,43 +214,64 @@ def get_allergens():
     return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
 
 
-@app.route('/user/save_allergy', methods=['POST'])
-@jwt_required()  
-def save_allergy():
-    user_id = get_jwt_identity()  
-    if not user_id:
-        return jsonify({"message": "Not logged in."}), 404  
-
-    data = request.get_json()
-    print("Received data:", data)
-    
-    allergies = data.get('allergies') 
-    if not allergies:
-        return jsonify({"message": "No allergies data found."}), 400
-
+@app.route('/user/allergies', methods=['GET', 'POST'])
+@jwt_required()
+def user_allergies():
+    user_id = get_jwt_identity()
     user = db.session.get(User, user_id)
     if not user:
-        return jsonify({"message": "User not found."}), 404
-    UserAllergy.query.filter_by(user_id=user.id).delete()
-    db.session.commit()
+        return jsonify({"message": "Not logged in or user not found."}), 404
 
-# add new allergy information
-    for allergy in allergies:
-        allergy_name = allergy.get("name")
-        scale = allergy.get("scale", '')  
-        if scale == None:
-            continue
-        if scale not in [0, 1, 2, 3]: 
-            return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+    if request.method == 'GET':
+        # return allergen names
+        allergies = (
+            db.session.query(UserAllergy, Allergen)
+            .join(Allergen, UserAllergy.allergen_id == Allergen.id)
+            .filter(UserAllergy.user_id == user.id)
+            .all()
+        )
+        result = [
+            {
+                'allergen_id': allergen.id,
+                'name': allergen.name,
+                'scale': ua.scale
+            }
+            for ua, allergen in allergies
+        ]
+        return jsonify(result), 200
+    
+    elif request.method == 'POST':
+        data = request.get_json()
+        print("Received data:", data)
+        allergies = data.get('allergies') 
+        if allergies is None:
+            return jsonify({"message": "No allergies data found."}), 400
 
-        allergen = Allergen.query.filter_by(name=allergy_name).first()
+        UserAllergy.query.filter_by(user_id=user.id).delete()
+        # db.session.commit()
 
-        if allergen:
-            user_allergy = UserAllergy(user_id=user.id, allergen_id=allergen.id, scale=scale)
-            db.session.add(user_allergy)
+        # if new allergies list is empty
+        if len(allergies) == 0:
+            db.session.commit()
+            return jsonify({"message": "Allergies cleared."}), 200
 
-    db.session.commit()
-    return jsonify({"message": "Allergy information updated successfully."}), 200
+        # add new allergy information
+        for allergy in allergies:
+            allergen_id = allergy.get("allergen_id")
+            scale = allergy.get("scale", '')  
+            if allergen_id is None or scale is None:
+                continue
+            if scale not in [0, 1, 2, 3]: 
+                return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+
+            allergen = db.session.get(Allergen, allergen_id)
+            if allergen:
+                ua = UserAllergy(user_id=user.id, allergen_id=allergen_id, scale=scale)
+                db.session.add(ua)
+
+        db.session.commit()
+        print("Committed successfully. Allergies count:", UserAllergy.query.filter_by(user_id=user.id).count())
+        return jsonify({"message": "Allergy information updated successfully."}), 200
 
 
 # endpoint for getting menu information

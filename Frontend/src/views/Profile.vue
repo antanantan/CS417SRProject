@@ -1,8 +1,9 @@
 <script setup>
 import axios from 'axios';
 import {ref, onMounted} from 'vue';
-import api from '@/api/auth.js';
+import { api, authApi } from '@/api/auth.js';
 import { useRouter } from 'vue-router';
+import Card from '@/components/Steps_Bottom.vue';
 
 const username = ref('');
 const email = ref('');
@@ -135,7 +136,7 @@ const allergyPage = () => {
   </div>
 
   
-
+ <Card />
 </template>
 
 <style scoped>

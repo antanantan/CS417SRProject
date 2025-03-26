@@ -1,11 +1,13 @@
 <script setup>
-import { ref, computed, onMounted} from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { Icon } from "@iconify/vue";
-import api from "@/api/auth.js";
+import { api, authApi } from "@/api/auth.js";
+import { userAllergies, fetchUserAllergies, applyUserAllergySelections } from '@/composables/useUserAllergies.js';
 
 // get 'v-model'
 const props = defineProps(["modelValue"]);
-const emit = defineEmits(["update:modelValue"]);
+const emit = defineEmits(['update:modelValue', 'updated']);
+
 
 // allergen data
 const allergenGroups = ref([]);
@@ -15,8 +17,11 @@ const allergenItems = ref([]);
 const fetchAllergenData = async () => {
   try {
     const response = await api.get("/allergens");
-    allergenGroups.value = response.data.allergen_groups || [];
-    allergenItems.value = response.data.allergen_items || [];
+    allergenGroups.value = response.data.allergen_groups;
+    allergenItems.value = response.data.allergen_items.map(item => ({
+      ...item,
+      selected: false
+    }));
   } catch (error) {
     console.error("Error fetching allergy data:", error);
     allergenGroups.value = [];
@@ -25,14 +30,43 @@ const fetchAllergenData = async () => {
 };
 
 // 初回マウント時にデータ取得
-onMounted(fetchAllergenData);
+onMounted(async () => {
+  await fetchAllergenData();
+  await fetchUserAllergies();
+  applyUserAllergySelections(allergenItems.value);
+});
+
+watch(() => props.modelValue, async (isOpen) => {
+  if (isOpen) {
+    await fetchUserAllergies();
+    applyUserAllergySelections(allergenItems.value);
+  }
+});
 
 // 検索機能
 const searchQuery = ref("");
-const filteredAllergies = computed(() => {
-  return allergenItems.value.filter((a) =>
-    a.name.toLowerCase().includes(searchQuery.value.toLowerCase())
-  );
+// const filteredAllergies = computed(() => {
+//   return allergenItems.value.filter((a) =>
+//     a.name.toLowerCase().includes(searchQuery.value.toLowerCase())
+//   );
+// });
+const filteredAllergenGroups = computed(() => {
+  const query = searchQuery.value.toLowerCase();
+
+  return allergenGroups.value
+    .map(group => {
+      const matchingAllergens = allergenItems.value.filter(allergen =>
+        allergen.group_id === group.id &&
+        (group.name.toLowerCase().includes(query) ||
+         allergen.name.toLowerCase().includes(query))
+      );
+
+      return {
+        ...group,
+        allergens: matchingAllergens,
+      };
+    })
+    .filter(group => group.allergens.length > 0);
 });
 
 // 検索をクリア
@@ -42,16 +76,32 @@ const clearSearch = () => {
 
 // アレルゲンの選択・解除
 const toggleAllergen = (allergen) => {
-  allergen.selected = !allergen.selected;
+  allergenItems.selected = !allergenItems.selected;
 };
 
 // すべてのアレルギーを適用
-const applyAllAllergies = () => {
-  allergenItems.value.forEach((allergy) => {
-    if (allergy.severity) {
-      allergy.selected = true;
-    }
-  });
+const applyAllAllergies = async () => {
+  const payload = {
+    allergies: allergenItems.value
+      .filter(a => a.selected)
+      .map(a => ({
+        allergen_id: a.id,
+        scale: 1, // ここは一旦「あるだけで1」としておく。後でseverity選択に変更可能
+      })),
+  };
+
+  try {
+    // console.log("Payload value: ", payload);
+    const response = await authApi.post('/user/allergies', payload);
+    console.log(response.data.message);
+    emit("updated"); 
+    emit("update:modelValue", false);// close modal
+  } catch (error) {
+    console.error(
+      'Error saving allergies:',
+      error.response?.data?.message || error.message
+    );
+  }
 };
 
 // すべてのアレルギーをリセット
@@ -93,6 +143,8 @@ const close = () => {
             <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-2" />
             <input
               type="text"
+              id="allergen-search"
+              name="allergen-search"
               v-model="searchQuery"
               placeholder="Search allergens..."
               class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:outline-none text-gray-700 px-2"
@@ -107,7 +159,7 @@ const close = () => {
 
           <!-- アレルギーリスト -->
           <div class="mt-4 overflow-auto flex-1">
-            <div v-for="group in allergenGroups" :key="group.id" class="mb-4">
+            <div v-for="group in filteredAllergenGroups" :key="group.id" class="mb-4">
               <h3 class="text-md font-bold text-gray-800 border-b pb-1">{{ group.name }}</h3>
               <ul class="mt-2 space-y-2">
                 <li
@@ -117,6 +169,8 @@ const close = () => {
                 >
                   <input
                     type="checkbox"
+                    :id="`allergen-${allergen.id}`"
+                    :name="`allergen-${allergen.id}`"
                     v-model="allergen.selected"
                     @change="toggleAllergen(allergen)"
                     class="mr-2"
@@ -129,8 +183,8 @@ const close = () => {
 
           <!-- 操作ボタン -->
           <div class="mt-6 flex justify-end space-x-2">
-            <button @click="applyAllAllergies" class="px-4 py-2 border-1 border-green-700 text-green-700 rounded-md hover:text-white hover:bg-green-700 transition">Apply</button>
-            <button @click="resetAllAllergies" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-md hover:bg-gray-400">Reset</button>
+            <button @click="applyAllAllergies" class="px-4 py-2 border-1 border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Apply</button>
+            <button @click="resetAllAllergies" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400">Reset</button>
           </div>
         </div>
       </div>

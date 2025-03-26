@@ -1,6 +1,6 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-import api from '@/api/auth.js';
+import { api, authApi } from '@/api/auth.js';
 </script>
 
 <template>

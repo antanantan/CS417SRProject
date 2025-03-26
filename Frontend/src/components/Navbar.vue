@@ -3,15 +3,13 @@ import { RouterLink, useRoute } from 'vue-router';
 import { ref } from 'vue';
 import logo from '@/assets/img/logo.png';
 import { Icon } from '@iconify/vue';
+import { api, authApi } from "@/api/auth.js";
 import AllergyProfileModal from "@/components/AllergyProfileModal.vue";
+import { userAllergies, fetchUserAllergies, applyUserAllergySelections } from '@/composables/useUserAllergies.js';
 
 const isActiveLink = (routePath) => {
   const route = useRoute();
   return route.path === routePath;
-};
-
-const goToProfile = () => {
-  router.push("/profile");
 };
 
 const showFilterModal = ref(false);
@@ -57,23 +55,23 @@ const openAllergyModal = () => {
               ]"
               >Guest</RouterLink>
 
-            <button @click="goToProfile" class="group rounded-full bg-green-700 text-white hover:bg-white mr-8">
+            <RouterLink to="/profile" class="group rounded-full bg-green-700 text-white hover:bg-white mr-8">
               <Icon icon='mdi:user' class="w-7 h-7 group-hover:text-green-700 m-2" ></Icon>
-            </button>
+            </RouterLink>
 
             <button @click="openAllergyModal" class="group rounded-full bg-green-700 text-white hover:bg-white mr-8">
               <Icon icon='mdi:food-allergy' class="w-7 h-7 group-hover:text-green-700 m-2" ></Icon>
             </button>
 
 
-            <button class="group rounded-full bg-green-700 text-white hover:bg-white mr-10">
+            <RouterLink to="/order" class="group rounded-full bg-green-700 text-white hover:bg-white mr-10">
               <Icon icon='mdi:cart' class="w-7 h-7 group-hover:text-green-700 m-2"></Icon>
-            </button>
+            </RouterLink>
           </div>
         </div>
       </div>
     </div>
   </nav>
-  <AllergyProfileModal v-model="showFilterModal" />
+  <AllergyProfileModal v-model="showFilterModal" @updated="fetchUserAllergies" />
 
 </template>
