@@ -10,6 +10,10 @@ const isActiveLink = (routePath) => {
   return route.path === routePath;
 };
 
+const goToProfile = () => {
+  router.push("/profile");
+};
+
 const showFilterModal = ref(false);
 
 const openAllergyModal = () => {
@@ -53,7 +57,7 @@ const openAllergyModal = () => {
               ]"
               >Guest</RouterLink>
 
-            <button class="group rounded-full bg-green-700 text-white hover:bg-white mr-8">
+            <button @click="goToProfile" class="group rounded-full bg-green-700 text-white hover:bg-white mr-8">
               <Icon icon='mdi:user' class="w-7 h-7 group-hover:text-green-700 m-2" ></Icon>
             </button>
 

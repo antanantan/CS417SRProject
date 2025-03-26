@@ -62,9 +62,9 @@ const formattedPhone = computed(() => {
 });
 
 
-// menu filtering by search and user allergens
+// menu filtering by search and user allergies
 const searchQuery = ref("");
-const userAllergens = ref(["Eggs", "Shrimp"]); // change later
+const userAllergies = ref(["Eggs", "Shrimp"]); // change later
 const allergyFilterOn = ref(true); 
 
 const toggleAllergyFilter = () => {
@@ -76,11 +76,11 @@ const filteredMenu = computed(() => {
 
   return menu.value.filter((item) => {
     const matchesName = item.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const hasAllergens = userAllergens.value.length > 0
-      ? item.allergens.some(allergen => userAllergens.value.includes(allergen))
+    const hasAllergies = userAllergies.value.length > 0
+      ? item.allergens.some(allergen => userAllergies.value.includes(allergen))
       : false; // no filter if user has no allergens
 
-    return matchesName && (!allergyFilterOn.value || !hasAllergens);
+    return matchesName && (!allergyFilterOn.value || !hasAllergies);
   });
 });
 
@@ -157,7 +157,7 @@ const proceedToCheckout = () => {
 </script>
 
 <template>
-  <div class="flex flex-col md:flex-row justify-between gap-0 p-3 bg-neutral-50 my-16">
+  <div class="flex flex-col md:flex-row justify-between gap-0 p-3 bg-neutral-50">
     <!-- Left Column (hidden in phone screen) -->
     <div class="w-full md:w-1/3 lg:w-1/4">
       <div class="bg-white rounded-xl shadow-md m-3 overflow-hidden">

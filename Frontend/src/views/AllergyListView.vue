@@ -66,7 +66,7 @@ const saveAllergies = async () => {
   console.log("Sending this data:", allergiesData);
 
   try {
-    const response = await axios.post('/auth/save_allergy', 
+    const response = await api.post('/user/save_allergy', 
       { allergies: allergiesData },
       { headers: { Authorization: `Bearer ${token}` } }
     );
