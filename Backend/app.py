@@ -183,7 +183,7 @@ def create_map(country='US'):
         if not location:
             return jsonify({"error": "Could not find location for the given zip code."}), 400
         
-        map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
+        # map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
 
 # marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
 
@@ -196,14 +196,53 @@ def create_map(country='US'):
         if cuisine:
             query = query.filter_by(cuisine=cuisine)
 
+        markers = [{
+            'id': restaurant.id,
+            'name': restaurant.name,
+            'latitude': restaurant.latitude,
+            'longitude': restaurant.longitude,
+            'address': restaurant.address,
+        } for restaurant in restaurants]
+        return jsonify(markers)
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        """
         for restaurant in restaurants:
             restaurant_location = [restaurant.latitude, restaurant.longitude]
             restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
             
             folium.Marker(
                 restaurant_location,
-                popup=folium.Popup(restaurant_info, max_width=300)
+                popup=folium.Popup(restaurant_info, max_width=300),
+                title=restaurant.name
             ).add_to(map)
+
+            marker_data_script = f
+            <script>
+            setTimeout(function() {{
+                var marker = document.querySelector('.leaflet-marker-icon[title="{restaurant.name.replace("'", "\\'")}"]');
+                if (marker) {{
+                    marker.addEventListener('click', function() {{
+                        var markerData = {{
+                            id: {restaurant.id},
+                            name: '{restaurant.name.replace("'", "\\'")}',
+                            address: '{restaurant.address.replace("'", "\\'")}'
+                        }};
+                        
+                        fetch('/location_select', {{
+                            method: 'POST',
+                            headers: {{'Content-Type': 'application/json'}},
+                            body: JSON.stringify(markerData)
+                        }})
+                        .then(response => response.json())
+                        .then(data => {{console.log('Marker data received:', data);}})
+                        .catch(error => {{console.error('Error sending marker data:', error);}});
+                    }});
+                }} else {{console.error('Marker not found with title: {restaurant.name}');}}
+            }}, 500); 
+            </script>
+            
+            map.get_root().html.add_child(folium.Element(marker_data_script))
 
         map_path = os.path.join('static', 'map.html')
 
@@ -212,10 +251,24 @@ def create_map(country='US'):
 
         response = jsonify({"map_url": "/static/map.html"})
         response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 200
+        return response, 200"
+    """
+    
+@app.route('/location_select', methods=['POST'])
+def handle_marker_selection():
+    print("Location select route hit!")
+    try:
+        data = request.json  
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+        print(f"Received marker data: {data}") 
+        return jsonify({
+            "status": "success",
+            "selected_marker": data
+        }), 200 
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": "An error occurred while processing the data."}), 500
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function

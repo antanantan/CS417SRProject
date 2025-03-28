@@ -2,7 +2,7 @@ Things to Do! Listed in Order of Priority
 
 Allergen Profile
 
-- FIX ALLERGY PAGE INTERFACE
+- FIX ALLERGY PAGE INTERFACE **(Y)**
 - ~~import menu information into the menu interface~~
 - ~~create allergen profile based on currently logged in user~~
 - ~~add ability to filter menu based on allergy profile ~~
@@ -17,11 +17,11 @@ User Profile
 
 Payment Feature
 
-- ~~start implementing a pseudo-payment feature~~
+- clean up the payment page!
 
 Location View
 
-- add functionality to filter restaurants by type, cuisine, price range, etc.
+- MAKE THE RESTAURANTS ACTUALLY SELECTABLE **(E)**
 - ~~handle errors properly and push to the front~~
 - ~~keep adding restaurants and menu items (seed_restaurants.py)!~~
 
