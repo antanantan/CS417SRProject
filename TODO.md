@@ -6,7 +6,7 @@ Allergen Profile
 - ~~import menu information into the menu interface~~
 - ~~create allergen profile based on currently logged in user~~
 - ~~add ability to filter menu based on allergy profile ~~
-- allow guest profile feature
+- allow guest profile feature **(A)** 
 
 User Profile
 
@@ -28,4 +28,4 @@ Location View
 Miscellaneous
 
 - simply make it look pretty!
-- add "delete account" feature?
+~~- add "delete account" feature?~~
