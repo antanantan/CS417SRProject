@@ -2,7 +2,7 @@
 import Card from '@/components/Steps_Bottom.vue';
 import {useRouter} from "vue-router";
 import Modal from "@/components/Disclaimer.vue"
-import api from '@/api/auth.js';
+import { api, authApi } from '@/api/auth.js';
 import { ref, computed, onMounted} from 'vue';
 import axios from "axios";
 
@@ -66,7 +66,7 @@ const saveAllergies = async () => {
   console.log("Sending this data:", allergiesData);
 
   try {
-    const response = await axios.post('http://localhost:5000/save_allergy', 
+    const response = await api.post('/user/allergies', 
       { allergies: allergiesData },
       { headers: { Authorization: `Bearer ${token}` } }
     );

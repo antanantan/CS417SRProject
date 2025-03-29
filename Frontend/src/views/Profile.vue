@@ -1,7 +1,9 @@
 <script setup>
 import axios from 'axios';
 import {ref, onMounted} from 'vue';
+import { api, authApi } from '@/api/auth.js';
 import { useRouter } from 'vue-router';
+import Card from '@/components/Steps_Bottom.vue';
 
 const username = ref('');
 const email = ref('');
@@ -14,91 +16,64 @@ const resetSuccess = ref(false);
 
 // function to grab profile information from backend based on token
 const fetchProfile = async () => {
-  const token = localStorage.getItem('token');
-    if (!token) {
-      errorMessage.value = 'You are not logged in.';
-      await router.push('/login');
-      return;
-    } 
-    try {
-    const response = await axios.get('http://localhost:5000/profile', {
-      headers: { Authorization: `Bearer ${token}` }, 
-  });
-
-  if (response.data.username) {
-      username.value = response.data.username;
-      email.value = response.data.email;
-      if (response.data.allergies) {
-        allergies.value = response.data.allergies;
-      }
-      else {
-        console.warn('User has no listed allergies.', response.data);
-      }
+  try {
+    const response = await authApi.get('/user/profile');
+    if (response.data.username) {
+        username.value = response.data.username;
+        email.value = response.data.email;
+        allergies.value = response.data.allergies || [];
     } else {
       console.warn('No username returned:', response.data);
       username.value = null;
     }
-} catch (error) {
-    if (error.response && error.response.status === 401) {
+  } catch (error) {
+    if (error.response?.status === 401) {
       localStorage.removeItem('token'); 
       errorMessage.value = 'Your session has expired. Please log in again.';
       await router.push('/login');
-    } else {errorMessage.value = 'Failed to load profile';}
-    username.value = null;}
+    } else {
+      errorMessage.value = 'Failed to load profile'
+      console.error(error);
+    ;}
+    username.value = null;
+  }
 }; 
 
 const deleteAccount = async () => {
-  if (confirm('Are you sure you want to delete your account?')) {
-    const token = localStorage.getItem('token');
+  if (!confirm('Are you sure you want to delete your account?')) return;
+
+  try {
+    const response = await authApi.delete('/user/delete');
+
+    if (response.status === 200) {
+      alert(response.data.message);
+      localStorage.removeItem('token');
       await router.push('/login');
-      try {
-        const response = await axios.delete('http://localhost:5000/delete_account', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
 
-        if (response.status === 200) {
-          alert(response.data.message);
-          localStorage.removeItem('token');
-          await router.push('/login');
-
-        } else {
-          alert('Failed to delete account. Please try again');
-          await router.push('/profile');
-        }
-      } catch (error) {
-        console.error('Error deleting the account:', error);
-        alert('An error occurred. Please try again.');
-        await router.push('/profile');
-      }
-      return;
+    } else {
+      alert('Failed to delete account. Please try again');
+      await router.push('/profile');
+    }
+  } catch (error) {
+    console.error('Error deleting the account:', error);
+    alert('An error occurred. Please try again.');
+    await router.push('/profile');
   }
-}
+};
 
 
 const resetPassword = async () => {
   try {
-    const response = await fetch('http://localhost:5000/password_reset', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        email: email.value, 
-        new_password: newPassword.value,
-      }),
+    const response = await authApi.post('/auth/password_reset', {
+      email: email.value,
+      new_password: newPassword.value,
     });
 
-    const data = await response.json();
-
-    if (response.ok) {
-      resetMessage.value = data.message;
-      resetSuccess.value = true;
-    } else {
-      resetMessage.value = data.message;
-      resetSuccess.value = false;
-    }
+    resetMessage.value = response.data.message;
+    resetSuccess.value = true;
   } catch (error) {
-    resetMessage.value = 'An error occurred. Please try again.';
+    console.error('Error resetting password:', error);
+    resetMessage.value = error.response?.data?.message || 'An error occurred. Please try again.';
     resetSuccess.value = false;
   }
 };
@@ -164,7 +139,7 @@ const allergyPage = () => {
   </div>
 
   
-
+ <Card />
 </template>
 
 <style scoped>
