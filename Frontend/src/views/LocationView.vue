@@ -1,6 +1,5 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-import { api, authApi } from '@/api/auth.js';
 </script>
 
 <template>
@@ -15,19 +14,19 @@ import { api, authApi } from '@/api/auth.js';
   <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   <br>
 
-<div class="map_container">
-  <iframe v-if="map_displayed" :src="map_displayed"></iframe>
+<div class="map_wrapper">
+  <div ref="map_container" style="height: 100%; width: 100%;"></div>
 </div>
 
-<div>
-  <div v-if="selectedMarker">
-    <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
-    <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
-  </div>
-  <div v-else>
-    <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
-  </div>
+<div v-if="selectedMarker" style="text-align: center; font-size: x-large;">
+  <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
+  <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
 </div>
+<div v-else>
+  <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
+</div>
+
+
 
   <Card></Card>
 </template>
@@ -54,23 +53,23 @@ export default {
       }
 
       try {
-        const response = await fetch('/location', {method: 'POST', headers:{'Content-Type': 'application/json'}, body: JSON.stringify({ zip_code: this.zip_entered }),});
+        const response = await fetch('http://localhost:5000/location', {method: 'POST', headers:{'Content-Type': 'application/json'}, body: JSON.stringify({ zip_code: this.zip_entered }),});
         const data = await response.json();
-        if (response.ok) {
-          // Clear any previous map
-          if (this.map_displayed) {
-            this.map_displayed.remove();
+
+        if (response.ok && data && data.length > 0) {
+          const firstRestaurant = data[0];  
+          if (this.map) {
+            this.map.remove();
           }
-          const firstRestaurant = data[0];  // Use the first restaurant to center the map
-          this.map = L.map(this.$refs.mapContainer).setView(
+          this.map = L.map(this.$refs.map_container).setView(
             [firstRestaurant.latitude, firstRestaurant.longitude],
             12
           );
 
-          // Set OpenStreetMap tiles
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-
-          // Create markers for each restaurant
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(this.map);
+          this.$nextTick(() => {
+            this.map.invalidateSize();
+          });       
           data.forEach((restaurant) => {
             const marker = L.marker([restaurant.latitude, restaurant.longitude])
               .addTo(this.map)
@@ -79,14 +78,15 @@ export default {
                 ${restaurant.address}
               `)
               .on('click', () => {
-                // When marker is clicked, handle marker selection
                 this.handleMarkerSelection(restaurant);
               });
             this.markers.push(marker);
           });
+          
         } else {
-          this.errorMessage = data.error || 'Error generating map.';
-        }}
+          this.errorMessage = data.error || 'error generating map.';
+        }
+      }
       catch (error) {
         this.errorMessage = 'error generating map.';
         console.error(error);
@@ -94,26 +94,20 @@ export default {
     },
     async handleMarkerSelection(markerData) {
       try {
-        const response = await fetch('/location_select', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(markerData), 
-        });
+        const response = await fetch('http://localhost:5000/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}, body: JSON.stringify(markerData),});
 
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          throw new Error(`HTTP error. status: ${response.status}`);
         }
 
-        const data = await response.json();  
+        const data = await response.json();
         if (data.status === 'success') {
-          this.selectedMarker = data.selected_marker; 
+          this.selectedMarker = data.selected_marker;
         } else {
-          console.error('Error: ', data.error);
+          console.error('error:', data.error);
         }
-      } catch (error) {
-        console.error('Error sending marker data:', error);
+      } catch (e) {
+        console.error('error sending marker data:', e);
       }
     }
   },
@@ -126,10 +120,10 @@ export default {
         }
       })
       .catch((error) => {
-        console.error('Error fetching marker data:', error);
+        console.error('error fetching marker data:', error);
       });
-  }
-};
+    }
+  };
 </script>
 
 <style scoped>
@@ -147,16 +141,22 @@ button {
 button:hover {
   color: darkgreen;
 }
-.map_container {
+.map_wrapper {
   display: flex;
-  justify-content: center;
-}
-iframe {
+  justify-self: center;
   border-width: 1rem; 
   border-radius: 5%;
   border-color: #f27e9f; 
   width: 800px;
   height: 550px;
+  overflow: hidden;
+  align-items: center;
+}
+.map_container div {
+  width: 100%; 
+  height: 100%; 
+  position: relative;
+  position: absolute
 }
 .error-message {
   color: red;

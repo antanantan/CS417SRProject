@@ -6,7 +6,7 @@ Allergen Profile
 - ~~import menu information into the menu interface~~
 - ~~create allergen profile based on currently logged in user~~
 - ~~add ability to filter menu based on allergy profile ~~
-- allow guest profile feature **(A)** 
+- allow guest profile feature **(A)**
 
 User Profile
 
@@ -17,15 +17,15 @@ User Profile
 
 Payment Feature
 
-- clean up the payment page!
+- clean up the payment page! **(E)**
 
 Location View
 
-- MAKE THE RESTAURANTS ACTUALLY SELECTABLE **(E)**
+- ~~MAKE THE RESTAURANTS ACTUALLY SELECTABLE~~
 - ~~handle errors properly and push to the front~~
 - ~~keep adding restaurants and menu items (seed_restaurants.py)!~~
 
 Miscellaneous
 
 - simply make it look pretty!
-~~- add "delete account" feature?~~
+  ~~- add "delete account" feature?~~

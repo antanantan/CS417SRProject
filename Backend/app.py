@@ -181,13 +181,8 @@ def create_map(country='US'):
         geolocator = Nominatim(user_agent="app")
         location = geolocator.geocode(f"{zip_code}, {country}")
         if not location:
-            return jsonify({"error": "Could not find location for the given zip code."}), 400
-        
-        # map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
-
-# marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
-
-# adjust as needed
+            return jsonify({"error": "could not find location for the given zip code."}), 400
+    
         restaurants = Restaurant.query.filter(
             Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
             Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
@@ -203,65 +198,24 @@ def create_map(country='US'):
             'longitude': restaurant.longitude,
             'address': restaurant.address,
         } for restaurant in restaurants]
-        return jsonify(markers)
-    except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-        """
-        for restaurant in restaurants:
-            restaurant_location = [restaurant.latitude, restaurant.longitude]
-            restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
-            
-            folium.Marker(
-                restaurant_location,
-                popup=folium.Popup(restaurant_info, max_width=300),
-                title=restaurant.name
-            ).add_to(map)
+        if markers:
+            print(f"Markers: {markers}")
+            return jsonify(markers)
+        else:
+            return "no marker data for this zip code.", 200
 
-            marker_data_script = f
-            <script>
-            setTimeout(function() {{
-                var marker = document.querySelector('.leaflet-marker-icon[title="{restaurant.name.replace("'", "\\'")}"]');
-                if (marker) {{
-                    marker.addEventListener('click', function() {{
-                        var markerData = {{
-                            id: {restaurant.id},
-                            name: '{restaurant.name.replace("'", "\\'")}',
-                            address: '{restaurant.address.replace("'", "\\'")}'
-                        }};
-                        
-                        fetch('/location_select', {{
-                            method: 'POST',
-                            headers: {{'Content-Type': 'application/json'}},
-                            body: JSON.stringify(markerData)
-                        }})
-                        .then(response => response.json())
-                        .then(data => {{console.log('Marker data received:', data);}})
-                        .catch(error => {{console.error('Error sending marker data:', error);}});
-                    }});
-                }} else {{console.error('Marker not found with title: {restaurant.name}');}}
-            }}, 500); 
-            </script>
-            
-            map.get_root().html.add_child(folium.Element(marker_data_script))
-
-        map_path = os.path.join('static', 'map.html')
-
-        map.save(map_path)
-        print("request received!")
-
-        response = jsonify({"map_url": "/static/map.html"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 200"
-    """
     
+    except Exception as e:
+        return jsonify({"error": f"an error occurred: {str(e)}"}), 500
+    
+
 @app.route('/location_select', methods=['POST'])
 def handle_marker_selection():
-    print("Location select route hit!")
     try:
         data = request.json  
         if not data:
             return jsonify({"error": "No data received"}), 400
-        print(f"Received marker data: {data}") 
+        print(f"received marker data: {data}") 
         return jsonify({
             "status": "success",
             "selected_marker": data
