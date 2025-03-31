@@ -10,22 +10,19 @@ Allergen Profile
 
 User Profile
 
-- fix profile page interface
-- add ability to edit allergen profile on the profile page?
+- fix profile page interface **(E)**
+- add ability to edit allergen profile on the profile page maybe?
 - allow user to SECURELY reset their password (NOTE: aso of right now, user can only reset their password if they are logged in)
-- ~~display allergen information to the profile page~~
 
 Payment Feature
 
-- clean up the payment page! **(E)**
+- ~~clean up the payment page!~~
 
 Location View
 
 - ~~MAKE THE RESTAURANTS ACTUALLY SELECTABLE~~
-- ~~handle errors properly and push to the front~~
-- ~~keep adding restaurants and menu items (seed_restaurants.py)!~~
+- allow the selected restaurant to reflect the selection on the next page
 
 Miscellaneous
 
 - simply make it look pretty!
-  ~~- add "delete account" feature?~~

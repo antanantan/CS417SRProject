@@ -130,6 +130,7 @@ export default {
 h1 {
   font-size: xx-large;
   text-align: center;
+  padding-top: 2%;
 }
 button {
   border-width: 5px; 

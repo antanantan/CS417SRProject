@@ -208,6 +208,8 @@ def create_map(country='US'):
     except Exception as e:
         return jsonify({"error": f"an error occurred: {str(e)}"}), 500
     
+# option to save selected marker for future use
+selected_marker = {}
 
 @app.route('/location_select', methods=['POST'])
 def handle_marker_selection():
@@ -216,6 +218,13 @@ def handle_marker_selection():
         if not data:
             return jsonify({"error": "No data received"}), 400
         print(f"received marker data: {data}") 
+
+        selected_marker['address'] = data.get('address')
+        selected_marker['id'] = data.get('id')
+        selected_marker['latitude'] = data.get('latitude')
+        selected_marker['longitude'] = data.get('longitude')
+        selected_marker['name'] = data.get('name') 
+
         return jsonify({
             "status": "success",
             "selected_marker": data
@@ -224,7 +233,22 @@ def handle_marker_selection():
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": "An error occurred while processing the data."}), 500
 
-# TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
+# function to retrieve the selected location (for menu page)
+@app.route('/get_selected_location', methods=['GET'])
+def get_selected_location():
+    try:
+        if not selected_marker:
+            return jsonify({"error": "No marker selected yet"}), 404
+        
+        return jsonify({
+            "status": "success",
+            "selected_marker": selected_marker
+        }), 200 
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": "An error occurred while fetching the data."}), 500
+
+
 # TODO: implement a guest login function
 @app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
