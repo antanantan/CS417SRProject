@@ -8,11 +8,13 @@ Allergen Profile
 - ~~add ability to filter menu based on allergy profile ~~
 - allow guest profile feature **(A)**
 
+
 User Profile
 
 - ~~fix profile page interface ~~
 - add ability to edit allergen profile on the profile page maybe?
 - allow user to SECURELY reset their password (NOTE: aso of right now, user can only reset their password if they are logged in) **(E)**
+-logout when tokens expire
 
 Payment Feature
 
@@ -24,5 +26,5 @@ Location View
 - allow the selected restaurant to reflect the selection on the next page
 
 Miscellaneous
-
+- eliminate stepbar 
 - simply make it look pretty!
