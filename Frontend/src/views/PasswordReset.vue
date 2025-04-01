@@ -54,7 +54,7 @@ const resetSuccess = ref(false);
 
 const resetPassword = async () => {
   try {
-    const response = await fetch('http://localhost:5000/password_reset', {
+    const response = await fetch('/auth/password_reset', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

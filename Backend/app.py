@@ -2,10 +2,10 @@ from flask import Flask
 from datetime import timedelta, datetime
 from flask import flash, jsonify, g, request, session, make_response, url_for
 from flask_cors import CORS, cross_origin
-import os, sqlite3, folium, pandas, json
+import os, sqlite3, folium, pandas, json, uuid
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
@@ -20,7 +20,7 @@ app.config['JWT_ACCESS_TOKEN_EXPIRES'] = timedelta(hours=1)
 # initialize extensions
 bcrypt = Bcrypt(app)
 jwt = JWTManager(app)
-CORS(app, supports_credentials=True, resources={r"/*": {"origins": "http://localhost:3000"}})
+CORS(app, supports_credentials=True, resources={r"/*": {"origins": ["http://127.0.0.1:3000", "http://localhost:3000"]}})
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE_URI = f"sqlite:///{os.path.join(BASE_DIR, 'database', 'db.sqlite3')}"
@@ -49,12 +49,13 @@ def close_connection(exception=None):
     db.session.remove()
 
 # function for handling account creation
-@app.route('/register', methods=['GET', 'POST'])
+@app.route('/auth/register', methods=['GET', 'POST'])
 def register():
     data = request.get_json()
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+    guest_token = data.get('guest_token')
 
     if not username or not email or not password:
         return jsonify({"message": "Missing required fields. Please try again."}), 400
@@ -73,11 +74,14 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user
+        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user:
+        
+        # add if converting from guest to transer allergies to new account
+
 
         return jsonify({"message": "Account created successfully", 'token': token}), 201
 
-    
+          
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating account", "error": str(e)}), 500
@@ -85,7 +89,10 @@ def register():
 
 
 # TODO: handle unique characters as appropriate and fix whatever this is
-@app.route('/login', methods=['POST'])
+
+
+
+@app.route('/auth/login', methods=['POST'])
 def login():
 # pulling data from login form
     data = request.get_json()
@@ -105,11 +112,13 @@ def login():
     return jsonify({"message": "User not found. Please create an account first."}), 404
 
 # function for pulling profile information from current session
-@app.route('/profile', methods=['GET'])
+@app.route('/user/profile', methods=['GET'])
 @jwt_required() 
 def profile():
-    user_id = get_jwt_identity()
+    user_id = get_user_or_guest()
+
     user = db.session.get(User, user_id)  
+    
     if user:
         allergies = db.session.query(Allergen.name).join(UserAllergy).filter(UserAllergy.user_id == user_id).all()
         allergy_list = [allergy[0] for allergy in allergies]
@@ -122,14 +131,34 @@ def profile():
     return jsonify({"message": "User not found."}), 404
 
 # function to handle user logout
-@app.route('/logout', methods=['POST'])
+@app.route('/auth/logout', methods=['POST'])
 @jwt_required() # user must be logged in to log out
 def logout():
     return jsonify ({"message": "you have been logged out."}), 200 # frontend token gets deleted from local storage and redirect to login page
 
+@app.route('/user/delete', methods=['DELETE'])
+@jwt_required()
+def delete_account():
+    user_id = get_jwt_identity()
+    user = db.session.get(User, user_id)
+
+    if not user:
+        return jsonify({"message": "User not found."}), 404
+    
+    try:
+        UserAllergy.query.filter_by(user_id=user.id).delete()
+        db.session.delete(user)
+        db.session.commit()
+        return jsonify({"message": "Account deleted successfully."}), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"message": "Error deleting account.", "error": str(e)}), 500
+
+
+
 # TODO: implement password reset function | take the user's email, check if it exists, and allow them to change their password.
 #       not the most secure method right now but at least that page will have something to do on it
-@app.route('/password_reset', methods=['POST'])
+@app.route('/auth/password_reset', methods=['POST'])
 def password_reset():
     data = request.get_json()
     email = data.get('email')  # don't we need username too?
@@ -163,7 +192,7 @@ def create_map(country='US'):
         if not location:
             return jsonify({"error": "Could not find location for the given zip code."}), 400
         
-        map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
+        # map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
 
 # marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
 
@@ -176,14 +205,53 @@ def create_map(country='US'):
         if cuisine:
             query = query.filter_by(cuisine=cuisine)
 
+        markers = [{
+            'id': restaurant.id,
+            'name': restaurant.name,
+            'latitude': restaurant.latitude,
+            'longitude': restaurant.longitude,
+            'address': restaurant.address,
+        } for restaurant in restaurants]
+        return jsonify(markers)
+    except Exception as e:
+        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        """
         for restaurant in restaurants:
             restaurant_location = [restaurant.latitude, restaurant.longitude]
             restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
             
             folium.Marker(
                 restaurant_location,
-                popup=folium.Popup(restaurant_info, max_width=300)
+                popup=folium.Popup(restaurant_info, max_width=300),
+                title=restaurant.name
             ).add_to(map)
+
+            marker_data_script = f
+            <script>
+            setTimeout(function() {{
+                var marker = document.querySelector('.leaflet-marker-icon[title="{restaurant.name.replace("'", "\\'")}"]');
+                if (marker) {{
+                    marker.addEventListener('click', function() {{
+                        var markerData = {{
+                            id: {restaurant.id},
+                            name: '{restaurant.name.replace("'", "\\'")}',
+                            address: '{restaurant.address.replace("'", "\\'")}'
+                        }};
+                        
+                        fetch('/location_select', {{
+                            method: 'POST',
+                            headers: {{'Content-Type': 'application/json'}},
+                            body: JSON.stringify(markerData)
+                        }})
+                        .then(response => response.json())
+                        .then(data => {{console.log('Marker data received:', data);}})
+                        .catch(error => {{console.error('Error sending marker data:', error);}});
+                    }});
+                }} else {{console.error('Marker not found with title: {restaurant.name}');}}
+            }}, 500); 
+            </script>
+            
+            map.get_root().html.add_child(folium.Element(marker_data_script))
 
         map_path = os.path.join('static', 'map.html')
 
@@ -192,14 +260,90 @@ def create_map(country='US'):
 
         response = jsonify({"map_url": "/static/map.html"})
         response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 200
+        return response, 200"
+    """
+    
+@app.route('/location_select', methods=['POST'])
+def handle_marker_selection():
+    print("Location select route hit!")
+    try:
+        data = request.json  
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+        print(f"Received marker data: {data}") 
+        return jsonify({
+            "status": "success",
+            "selected_marker": data
+        }), 200 
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": "An error occurred while processing the data."}), 500
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
-@app.route('/api/allergens', methods=['GET'])
+
+guest_storage = {}
+
+
+def set_guest_data(key, value):
+    guest_storage[key] = {
+        "value": value,
+        "expires_at": datetime.now() + timedelta(hours=1)  
+    }
+
+# get guest data + delete if expired
+def get_guest_data(key):
+    data = guest_storage.get(key)
+    if data and data["expires_at"] > datetime.now():
+        return data["value"]
+    elif data:
+        del guest_storage[key]
+    return None
+
+#delete guest key
+def del_guest_data(key):
+    if key in guest_storage:
+        del guest_storage[key]
+        return True
+    return False
+
+def get_user_or_guest():
+    try:
+        jwt_data = get_jwt()
+        user_id = get_jwt_identity()
+        is_guest = jwt_data.get('is_guest', False)
+
+        return {
+            "user_id": user_id, 
+            "is_guest": is_guest
+        }
+    except Exception as e:
+        return{
+            "id": None,
+            "is_guest": False,
+            "error": str(e)
+        }
+
+
+@app.route('/auth/guest', methods=['POST'])
+def create_guest_session():
+    #creates a unique id for the guest that just starts with guest tag
+    guest_id = f'guest_{uuid.uuid4().hex}'
+
+    token = create_access_token(identity=guest_id, expires_delta=timedelta(hours=1), additional_claims={"is_guest": True})
+
+    return jsonify({
+        "message": "Guest session created successfully.",
+        "token": token,
+        "is_guest": True
+    }), 200
+
+
+
+
+
+
+@app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_allergens():
     allergen_groups = [
@@ -214,48 +358,69 @@ def get_allergens():
     return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
 
 
-@app.route('/save_allergy', methods=['POST'])
-@jwt_required()  
-def save_allergy():
-    user_id = get_jwt_identity()  
-    if not user_id:
-        return jsonify({"message": "Not logged in."}), 404  
-
-    data = request.get_json()
-    print("Received data:", data)
-    
-    allergies = data.get('allergies') 
-    if not allergies:
-        return jsonify({"message": "No allergies data found."}), 400
-
+@app.route('/user/allergies', methods=['GET', 'POST'])
+@jwt_required()
+def user_allergies():
+    user_id = get_jwt_identity()
     user = db.session.get(User, user_id)
     if not user:
-        return jsonify({"message": "User not found."}), 404
-    UserAllergy.query.filter_by(user_id=user.id).delete()
-    db.session.commit()
+        return jsonify({"message": "Not logged in or user not found."}), 404
 
-# add new allergy information
-    for allergy in allergies:
-        allergy_name = allergy.get("name")
-        scale = allergy.get("scale", '')  
-        if scale == None:
-            continue
-        if scale not in [0, 1, 2, 3]: 
-            return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+    if request.method == 'GET':
+        # return allergen names
+        allergies = (
+            db.session.query(UserAllergy, Allergen)
+            .join(Allergen, UserAllergy.allergen_id == Allergen.id)
+            .filter(UserAllergy.user_id == user.id)
+            .all()
+        )
+        result = [
+            {
+                'allergen_id': allergen.id,
+                'name': allergen.name,
+                'scale': ua.scale
+            }
+            for ua, allergen in allergies
+        ]
+        return jsonify(result), 200
+    
+    elif request.method == 'POST':
+        data = request.get_json()
+        print("Received data:", data)
+        allergies = data.get('allergies') 
+        if allergies is None:
+            return jsonify({"message": "No allergies data found."}), 400
 
-        allergen = Allergen.query.filter_by(name=allergy_name).first()
+        UserAllergy.query.filter_by(user_id=user.id).delete()
+        # db.session.commit()
 
-        if allergen:
-            user_allergy = UserAllergy(user_id=user.id, allergen_id=allergen.id, scale=scale)
-            db.session.add(user_allergy)
+        # if new allergies list is empty
+        if len(allergies) == 0:
+            db.session.commit()
+            return jsonify({"message": "Allergies cleared."}), 200
 
-    db.session.commit()
-    return jsonify({"message": "Allergy information updated successfully."}), 200
+        # add new allergy information
+        for allergy in allergies:
+            allergen_id = allergy.get("allergen_id")
+            scale = allergy.get("scale", '')  
+            if allergen_id is None or scale is None:
+                continue
+            if scale not in [0, 1, 2, 3]: 
+                return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+
+            allergen = db.session.get(Allergen, allergen_id)
+            if allergen:
+                ua = UserAllergy(user_id=user.id, allergen_id=allergen_id, scale=scale)
+                db.session.add(ua)
+
+        db.session.commit()
+        print("Committed successfully. Allergies count:", UserAllergy.query.filter_by(user_id=user.id).count())
+        return jsonify({"message": "Allergy information updated successfully."}), 200
 
 
 # endpoint for getting menu information
-# later change it to '/api/menu/<restaurant_id>
-@app.route('/api/menu', methods=['GET'])
+# later change it to '/menu/<restaurant_id>
+@app.route('/menu', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_menu():
     restaurant = Restaurant.query.filter_by(name="JP's Diner").first()

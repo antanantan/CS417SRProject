@@ -25,7 +25,7 @@
             <meta name="viewport" content="width=device-width,
                 initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
             <style>
-                #map_2d85b3a392441aab6a72faec9f3001d2 {
+                #map_e5ced413bd5cc586119ea9248d9af287 {
                     position: relative;
                     width: 100.0%;
                     height: 100.0%;
@@ -39,14 +39,89 @@
 <body>
     
     
-            <div class="folium-map" id="map_2d85b3a392441aab6a72faec9f3001d2" ></div>
+            <script>
+            setTimeout(function() {
+                var marker = document.querySelector('.leaflet-marker-icon[title="Texas Roadhouse"]');
+                if (marker) {
+                    marker.addEventListener('click', function() {
+                        var markerData = {
+                            id: 4,
+                            name: 'Texas Roadhouse',
+                            address: '524 Saw Mill Rd, West Haven, CT 06516'
+                        };
+                        
+                        fetch('/location_select', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(markerData)
+                        })
+                        .then(response => response.json())
+                        .then(data => {console.log('Marker data received:', data);})
+                        .catch(error => {console.error('Error sending marker data:', error);});
+                    });
+                } else {console.error('Marker not found with title: Texas Roadhouse');}
+            }, 500); 
+            </script>
+            
+    
+            <script>
+            setTimeout(function() {
+                var marker = document.querySelector('.leaflet-marker-icon[title="Gusto Trattoria"]');
+                if (marker) {
+                    marker.addEventListener('click', function() {
+                        var markerData = {
+                            id: 7,
+                            name: 'Gusto Trattoria',
+                            address: '255 Boston Post Rd, Milford, CT 06460'
+                        };
+                        
+                        fetch('/location_select', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(markerData)
+                        })
+                        .then(response => response.json())
+                        .then(data => {console.log('Marker data received:', data);})
+                        .catch(error => {console.error('Error sending marker data:', error);});
+                    });
+                } else {console.error('Marker not found with title: Gusto Trattoria');}
+            }, 500); 
+            </script>
+            
+    
+            <script>
+            setTimeout(function() {
+                var marker = document.querySelector('.leaflet-marker-icon[title="Colony Grill"]');
+                if (marker) {
+                    marker.addEventListener('click', function() {
+                        var markerData = {
+                            id: 10,
+                            name: 'Colony Grill',
+                            address: '36 Broad St, Milford, CT 06460'
+                        };
+                        
+                        fetch('/location_select', {
+                            method: 'POST',
+                            headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(markerData)
+                        })
+                        .then(response => response.json())
+                        .then(data => {console.log('Marker data received:', data);})
+                        .catch(error => {console.error('Error sending marker data:', error);});
+                    });
+                } else {console.error('Marker not found with title: Colony Grill');}
+            }, 500); 
+            </script>
+            
+    
+            <div class="folium-map" id="map_e5ced413bd5cc586119ea9248d9af287" ></div>
         
 </body>
 <script>
     
     
-            var map_2d85b3a392441aab6a72faec9f3001d2 = L.map(
-                "map_2d85b3a392441aab6a72faec9f3001d2",
+            var map_e5ced413bd5cc586119ea9248d9af287 = L.map(
+                "map_e5ced413bd5cc586119ea9248d9af287",
                 {
                     center: [41.212399776666466, -73.0527719588459],
                     crs: L.CRS.EPSG3857,
@@ -63,7 +138,7 @@
 
         
     
-            var tile_layer_976f552afac607348317f43a8f485be7 = L.tileLayer(
+            var tile_layer_1a95b718a8a9b5725ebd54a1ae3f62f5 = L.tileLayer(
                 "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
                 {
   "minZoom": 0,
@@ -80,76 +155,79 @@
             );
         
     
-            tile_layer_976f552afac607348317f43a8f485be7.addTo(map_2d85b3a392441aab6a72faec9f3001d2);
+            tile_layer_1a95b718a8a9b5725ebd54a1ae3f62f5.addTo(map_e5ced413bd5cc586119ea9248d9af287);
         
     
-            var marker_e48be0c4536a0eabf482e6e0d3734c48 = L.marker(
+            var marker_3b06d493a8cec0019a1790ca0f82cb4d = L.marker(
                 [41.26876626494863, -72.9765845764732],
                 {
+  "title": "Texas Roadhouse",
 }
-            ).addTo(map_2d85b3a392441aab6a72faec9f3001d2);
+            ).addTo(map_e5ced413bd5cc586119ea9248d9af287);
         
     
-        var popup_5f597b4562e652db2e7b4a65752e8425 = L.popup({
+        var popup_ec471d6957fbf85ae5a9f2700f02a2cf = L.popup({
   "maxWidth": 300,
 });
 
         
             
-                var html_6f414e3a38c49d15e5423b96efdc04e1 = $(`<div id="html_6f414e3a38c49d15e5423b96efdc04e1" style="width: 100.0%; height: 100.0%;"><b>Texas Roadhouse</b><br>524 Saw Mill Rd, West Haven, CT 06516<br>Phone: 2039376222</div>`)[0];
-                popup_5f597b4562e652db2e7b4a65752e8425.setContent(html_6f414e3a38c49d15e5423b96efdc04e1);
+                var html_b9017fb2a478368b96b2fcfba600a86a = $(`<div id="html_b9017fb2a478368b96b2fcfba600a86a" style="width: 100.0%; height: 100.0%;"><b>Texas Roadhouse</b><br>524 Saw Mill Rd, West Haven, CT 06516<br>Phone: 2039376222</div>`)[0];
+                popup_ec471d6957fbf85ae5a9f2700f02a2cf.setContent(html_b9017fb2a478368b96b2fcfba600a86a);
             
         
 
-        marker_e48be0c4536a0eabf482e6e0d3734c48.bindPopup(popup_5f597b4562e652db2e7b4a65752e8425)
+        marker_3b06d493a8cec0019a1790ca0f82cb4d.bindPopup(popup_ec471d6957fbf85ae5a9f2700f02a2cf)
         ;
 
         
     
     
-            var marker_4e7aed71b321fceb31eb0170a6f9e9f8 = L.marker(
+            var marker_7d9e9d3d0d884ece0a68de54d14849c1 = L.marker(
                 [41.22202654726118, -73.0729469035956],
                 {
+  "title": "Gusto Trattoria",
 }
-            ).addTo(map_2d85b3a392441aab6a72faec9f3001d2);
+            ).addTo(map_e5ced413bd5cc586119ea9248d9af287);
         
     
-        var popup_ce68ad61992bf8a332883ba5b84977e4 = L.popup({
+        var popup_5c57caea56b85826464c1abc568cf63d = L.popup({
   "maxWidth": 300,
 });
 
         
             
-                var html_8bcc458543027b5bc6c963168621d5d7 = $(`<div id="html_8bcc458543027b5bc6c963168621d5d7" style="width: 100.0%; height: 100.0%;"><b>Gusto Trattoria</b><br>255 Boston Post Rd, Milford, CT 06460<br>Phone: 2038767464</div>`)[0];
-                popup_ce68ad61992bf8a332883ba5b84977e4.setContent(html_8bcc458543027b5bc6c963168621d5d7);
+                var html_2ee90ba8a7008b143e29aa31f2f6548c = $(`<div id="html_2ee90ba8a7008b143e29aa31f2f6548c" style="width: 100.0%; height: 100.0%;"><b>Gusto Trattoria</b><br>255 Boston Post Rd, Milford, CT 06460<br>Phone: 2038767464</div>`)[0];
+                popup_5c57caea56b85826464c1abc568cf63d.setContent(html_2ee90ba8a7008b143e29aa31f2f6548c);
             
         
 
-        marker_4e7aed71b321fceb31eb0170a6f9e9f8.bindPopup(popup_ce68ad61992bf8a332883ba5b84977e4)
+        marker_7d9e9d3d0d884ece0a68de54d14849c1.bindPopup(popup_5c57caea56b85826464c1abc568cf63d)
         ;
 
         
     
     
-            var marker_973bed29cb6714a47b71c95ec3d51ca4 = L.marker(
+            var marker_71d216837174eab657122091a336bc68 = L.marker(
                 [41.221875168272504, -73.0574744919484],
                 {
+  "title": "Colony Grill",
 }
-            ).addTo(map_2d85b3a392441aab6a72faec9f3001d2);
+            ).addTo(map_e5ced413bd5cc586119ea9248d9af287);
         
     
-        var popup_c38369a10363e733ebb9444e4d43555f = L.popup({
+        var popup_913441d766eace5ef020857463ee6ec8 = L.popup({
   "maxWidth": 300,
 });
 
         
             
-                var html_75fd2b6cf739e82ae1b5360d3a40b909 = $(`<div id="html_75fd2b6cf739e82ae1b5360d3a40b909" style="width: 100.0%; height: 100.0%;"><b>Colony Grill</b><br>36 Broad St, Milford, CT 06460<br>Phone: 2038761935</div>`)[0];
-                popup_c38369a10363e733ebb9444e4d43555f.setContent(html_75fd2b6cf739e82ae1b5360d3a40b909);
+                var html_45ac81f4e0a46b9106f3876d88531aaa = $(`<div id="html_45ac81f4e0a46b9106f3876d88531aaa" style="width: 100.0%; height: 100.0%;"><b>Colony Grill</b><br>36 Broad St, Milford, CT 06460<br>Phone: 2038761935</div>`)[0];
+                popup_913441d766eace5ef020857463ee6ec8.setContent(html_45ac81f4e0a46b9106f3876d88531aaa);
             
         
 
-        marker_973bed29cb6714a47b71c95ec3d51ca4.bindPopup(popup_c38369a10363e733ebb9444e4d43555f)
+        marker_71d216837174eab657122091a336bc68.bindPopup(popup_913441d766eace5ef020857463ee6ec8)
         ;
 
         
