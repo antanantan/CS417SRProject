@@ -23,7 +23,7 @@ watch(route, (newRoute) => {
 </script>
 
 <template>
-  <div class="bottom-navigation z-50 fixed inset-x-0 bottom-0">
+  <div class="bottom-navigation z-40 fixed inset-x-0 bottom-0">
     <GrowBottomNavigation 
     v-model="selectedOption" 
     :options="options"

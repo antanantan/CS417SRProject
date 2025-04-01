@@ -120,13 +120,17 @@ const close = () => {
 
 <template>
   <!-- Sidebar Overlay -->
-  <div v-if="modelValue" class="z-[9999] fixed inset-0 overflow-hidden mb-16">
-    <div class="absolute inset-0 bg-neutral-700 bg-opacity-50 bg-opacity-75 transition-opacity" @click="close"></div>
+  <div v-show="modelValue" class="z-[9999] fixed inset-0 overflow-hidden ">
+    <div
+      class="absolute inset-0 bg-neutral-700 bg-opacity-75 transition-opacity duration-700"
+      :class="{ 'opacity-75': modelValue, 'opacity-0': !modelValue }"
+      @click="close"
+    />
 
     <!-- Sidebar Content -->
     <section class="absolute inset-y-0 right-0 max-w-full flex">
       <div
-        class="w-screen max-w-md bg-white shadow-xl transition-transform duration-300 ease-out transform"
+        class="w-screen max-w-md bg-white shadow-xl transition-transform duration-700 ease-in-out transform"
         :class="{ 'translate-x-0': modelValue, 'translate-x-full': !modelValue }"
       >
         <div class="h-full flex flex-col py-6 px-6">
@@ -139,15 +143,15 @@ const close = () => {
           </div>
 
           <!-- 検索バー -->
-          <div class="flex items-center bg-white border-1 border-green-700 rounded-full p-2 w-full mx-auto">
-            <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-2" />
+          <div class="flex items-center bg-white border-1 border-green-700 rounded-full p-1 w-full mx-auto">
+            <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 m-2" />
             <input
               type="text"
               id="allergen-search"
               name="allergen-search"
               v-model="searchQuery"
               placeholder="Search allergens..."
-              class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:outline-none text-gray-700 px-2"
+              class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:outline-none text-gray-700 pr-2"
             />
             <Icon
               v-if="searchQuery"
@@ -158,7 +162,7 @@ const close = () => {
           </div>
 
           <!-- アレルギーリスト -->
-          <div class="mt-4 overflow-auto flex-1">
+          <div class="mt-4 overflow-auto flex-1 ">
             <div v-for="group in filteredAllergenGroups" :key="group.id" class="mb-4">
               <h3 class="text-md font-bold text-gray-800 border-b pb-1">{{ group.name }}</h3>
               <ul class="mt-2 space-y-2">
@@ -183,8 +187,8 @@ const close = () => {
 
           <!-- 操作ボタン -->
           <div class="mt-6 flex justify-end space-x-2">
-            <button @click="applyAllAllergies" class="px-4 py-2 border-1 border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Apply</button>
             <button @click="resetAllAllergies" class="px-4 py-2 bg-gray-300 text-gray-800 rounded-full hover:bg-gray-400">Reset</button>
+            <button @click="applyAllAllergies" class="px-4 py-2 border-1 border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Apply</button>
           </div>
         </div>
       </div>
