@@ -10,9 +10,9 @@ Allergen Profile
 
 User Profile
 
-- fix profile page interface **(E)**
+- ~~fix profile page interface ~~
 - add ability to edit allergen profile on the profile page maybe?
-- allow user to SECURELY reset their password (NOTE: aso of right now, user can only reset their password if they are logged in)
+- allow user to SECURELY reset their password (NOTE: aso of right now, user can only reset their password if they are logged in) **(E)**
 
 Payment Feature
 
