@@ -2,10 +2,10 @@ from flask import Flask
 from datetime import timedelta, datetime
 from flask import flash, jsonify, g, request, session, make_response, url_for
 from flask_cors import CORS, cross_origin
-import os, sqlite3, folium, pandas, json
+import os, sqlite3, folium, pandas, json, uuid
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
@@ -55,6 +55,7 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+    guest_token = data.get('guest_token')
 
     if not username or not email or not password:
         return jsonify({"message": "Missing required fields. Please try again."}), 400
@@ -73,11 +74,14 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user
+        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user:
+        
+        # add if converting from guest to transer allergies to new account
+
 
         return jsonify({"message": "Account created successfully", 'token': token}), 201
 
-    
+          
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating account", "error": str(e)}), 500
@@ -85,6 +89,9 @@ def register():
 
 
 # TODO: handle unique characters as appropriate and fix whatever this is
+
+
+
 @app.route('/auth/login', methods=['POST'])
 def login():
 # pulling data from login form
@@ -108,8 +115,10 @@ def login():
 @app.route('/user/profile', methods=['GET'])
 @jwt_required() 
 def profile():
-    user_id = get_jwt_identity()
+    user_id = get_user_or_guest()
+
     user = db.session.get(User, user_id)  
+    
     if user:
         allergies = db.session.query(Allergen.name).join(UserAllergy).filter(UserAllergy.user_id == user_id).all()
         allergy_list = [allergy[0] for allergy in allergies]
@@ -272,6 +281,68 @@ def handle_marker_selection():
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
+
+guest_storage = {}
+
+
+def set_guest_data(key, value):
+    guest_storage[key] = {
+        "value": value,
+        "expires_at": datetime.now() + timedelta(hours=1)  
+    }
+
+# get guest data + delete if expired
+def get_guest_data(key):
+    data = guest_storage.get(key)
+    if data and data["expires_at"] > datetime.now():
+        return data["value"]
+    elif data:
+        del guest_storage[key]
+    return None
+
+#delete guest key
+def del_guest_data(key):
+    if key in guest_storage:
+        del guest_storage[key]
+        return True
+    return False
+
+def get_user_or_guest():
+    try:
+        jwt_data = get_jwt()
+        user_id = get_jwt_identity()
+        is_guest = jwt_data.get('is_guest', False)
+
+        return {
+            "user_id": user_id, 
+            "is_guest": is_guest
+        }
+    except Exception as e:
+        return{
+            "id": None,
+            "is_guest": False,
+            "error": str(e)
+        }
+
+
+@app.route('/auth/guest', methods=['POST'])
+def create_guest_session():
+    #creates a unique id for the guest that just starts with guest tag
+    guest_id = f'guest_{uuid.uuid4().hex}'
+
+    token = create_access_token(identity=guest_id, expires_delta=timedelta(hours=1), additional_claims={"is_guest": True})
+
+    return jsonify({
+        "message": "Guest session created successfully.",
+        "token": token,
+        "is_guest": True
+    }), 200
+
+
+
+
+
+
 @app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_allergens():
