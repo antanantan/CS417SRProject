@@ -217,25 +217,30 @@ def handle_marker_selection():
         data = request.json  
         if not data:
             return jsonify({"error": "No data received"}), 400
+        
         print(f"received marker data: {data}") 
 
+        # Save the selected marker data
         selected_marker['address'] = data.get('address')
         selected_marker['id'] = data.get('id')
         selected_marker['latitude'] = data.get('latitude')
         selected_marker['longitude'] = data.get('longitude')
         selected_marker['name'] = data.get('name') 
 
+        # Directly return the selected marker as a response
         return jsonify({
             "status": "success",
-            "selected_marker": data
-        }), 200 
+            "selected_marker": selected_marker
+        }), 200
+
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": "An error occurred while processing the data."}), 500
 
-# function to retrieve the selected location (for menu page)
-@app.route('/get_selected_location', methods=['GET'])
+# Route to retrieve the selected location (for menu page)
+@app.route('/send_location', methods=['GET'])
 def get_selected_location():
+    print("! send location route hit")
     try:
         if not selected_marker:
             return jsonify({"error": "No marker selected yet"}), 404
@@ -244,6 +249,7 @@ def get_selected_location():
             "status": "success",
             "selected_marker": selected_marker
         }), 200 
+
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": "An error occurred while fetching the data."}), 500

@@ -94,7 +94,36 @@ export default {
     },
     async handleMarkerSelection(markerData) {
       try {
-        const response = await fetch('http://localhost:5000/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}, body: JSON.stringify(markerData),});
+        const response = await fetch('http://localhost:5000/location_select', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(markerData),
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error. status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.status === 'success') {
+          this.selectedMarker = data.selected_marker;
+
+          // Now, after the marker is selected, trigger /send_location
+          this.fetchSelectedLocation();
+        } else {
+          console.error('Error:', data.error);
+        }
+      } catch (e) {
+        console.error('Error sending marker data:', e);
+      }
+    },
+
+    async fetchSelectedLocation() {
+      try {
+        const response = await fetch('http://localhost:5000/send_location', {
+          method: 'GET',
+        });
 
         if (!response.ok) {
           throw new Error(`HTTP error. status: ${response.status}`);
@@ -103,13 +132,15 @@ export default {
         const data = await response.json();
         if (data.status === 'success') {
           this.selectedMarker = data.selected_marker;
+          console.log('Selected Location Data:', data.selected_marker);
+          // You can update your UI with the selected location here.
         } else {
-          console.error('error:', data.error);
+          console.error('Error:', data.error);
         }
-      } catch (e) {
-        console.error('error sending marker data:', e);
+      } catch (error) {
+        console.error('Error fetching selected location:', error);
       }
-    }
+    },
   },
   mounted() {
     fetch('/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}})
@@ -118,6 +149,7 @@ export default {
         if (data.status === 'success') {
           this.handleMarkerSelection(data.selected_marker);
         }
+        
       })
       .catch((error) => {
         console.error('error fetching marker data:', error);
