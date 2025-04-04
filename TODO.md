@@ -15,9 +15,9 @@ Payment Feature
 
 Location View
 
-- ~~allow the selected restaurant to reflect the selection on the next page~~ the route has been implemented and cleaned up, the only thing to do really is ensure that the logic is passed to the menu route **(E)**
+- ~~allow the selected restaurant to reflect the selection on the next page the route has been implemented and cleaned up, the only thing to do really is ensure that the logic is passed to the menu route~~
 
 Miscellaneous
 
 - eliminate stepbar
-- simply make it look pretty!
+- simply make it look pretty! **(E)**
