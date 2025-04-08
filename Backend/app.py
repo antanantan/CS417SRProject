@@ -334,13 +334,8 @@ def create_map(country='US'):
         geolocator = Nominatim(user_agent="app")
         location = geolocator.geocode(f"{zip_code}, {country}")
         if not location:
-            return jsonify({"error": "Could not find location for the given zip code."}), 400
-        
-        # map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
-
-# marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
-
-# adjust as needed
+            return jsonify({"error": "could not find location for the given zip code."}), 400
+    
         restaurants = Restaurant.query.filter(
             Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
             Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
@@ -356,74 +351,126 @@ def create_map(country='US'):
             'longitude': restaurant.longitude,
             'address': restaurant.address,
         } for restaurant in restaurants]
-        return jsonify(markers)
-    except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
-        """
-        for restaurant in restaurants:
-            restaurant_location = [restaurant.latitude, restaurant.longitude]
-            restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
-            
-            folium.Marker(
-                restaurant_location,
-                popup=folium.Popup(restaurant_info, max_width=300),
-                title=restaurant.name
-            ).add_to(map)
+        if markers:
+            print(f"Markers: {markers}")
+            return jsonify(markers)
+        else:
+            return "no marker data for this zip code.", 200
 
-            marker_data_script = f
-            <script>
-            setTimeout(function() {{
-                var marker = document.querySelector('.leaflet-marker-icon[title="{restaurant.name.replace("'", "\\'")}"]');
-                if (marker) {{
-                    marker.addEventListener('click', function() {{
-                        var markerData = {{
-                            id: {restaurant.id},
-                            name: '{restaurant.name.replace("'", "\\'")}',
-                            address: '{restaurant.address.replace("'", "\\'")}'
-                        }};
-                        
-                        fetch('/location_select', {{
-                            method: 'POST',
-                            headers: {{'Content-Type': 'application/json'}},
-                            body: JSON.stringify(markerData)
-                        }})
-                        .then(response => response.json())
-                        .then(data => {{console.log('Marker data received:', data);}})
-                        .catch(error => {{console.error('Error sending marker data:', error);}});
-                    }});
-                }} else {{console.error('Marker not found with title: {restaurant.name}');}}
-            }}, 500); 
-            </script>
-            
-            map.get_root().html.add_child(folium.Element(marker_data_script))
-
-        map_path = os.path.join('static', 'map.html')
-
-        map.save(map_path)
-        print("request received!")
-
-        response = jsonify({"map_url": "/static/map.html"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 200"
-    """
     
+    except Exception as e:
+        return jsonify({"error": f"an error occurred: {str(e)}"}), 500
+    
+# option to save selected marker for future use
+selected_marker = {}
+
 @app.route('/location_select', methods=['POST'])
 def handle_marker_selection():
-    print("Location select route hit!")
     try:
         data = request.json  
         if not data:
             return jsonify({"error": "No data received"}), 400
-        print(f"Received marker data: {data}") 
+        
+        print(f"received marker data: {data}") 
+
+        # Save the selected marker data
+        selected_marker['address'] = data.get('address')
+        selected_marker['id'] = data.get('id')
+        selected_marker['latitude'] = data.get('latitude')
+        selected_marker['longitude'] = data.get('longitude')
+        selected_marker['name'] = data.get('name') 
+
+        # Directly return the selected marker as a response
         return jsonify({
             "status": "success",
-            "selected_marker": data
-        }), 200 
+            "selected_marker": selected_marker
+        }), 200
+
     except Exception as e:
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": "An error occurred while processing the data."}), 500
 
 # TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
+# Route to retrieve the selected location (for menu page)
+@app.route('/send_location', methods=['GET'])
+def get_selected_location():
+    print("! send location route hit")
+    try:
+        if not selected_marker:
+            return jsonify({"error": "No marker selected yet"}), 404
+        
+        return jsonify({
+            "status": "success",
+            "selected_marker": selected_marker
+        }), 200 
+
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": "An error occurred while fetching the data."}), 500
+
+
+# TODO: implement a guest login function
+
+guest_storage = {}
+
+
+def set_guest_data(key, value):
+    guest_storage[key] = {
+        "value": value,
+        "expires_at": datetime.now() + timedelta(hours=1)  
+    }
+
+# get guest data + delete if expired
+def get_guest_data(key):
+    data = guest_storage.get(key)
+    if data and data["expires_at"] > datetime.now():
+        return data["value"]
+    elif data:
+        del guest_storage[key]
+    return None
+
+#delete guest key
+def del_guest_data(key):
+    if key in guest_storage:
+        del guest_storage[key]
+        return True
+    return False
+
+def get_user_or_guest():
+    try:
+        jwt_data = get_jwt()
+        user_id = get_jwt_identity()
+        is_guest = jwt_data.get('is_guest', False)
+
+        return {
+            "user_id": user_id, 
+            "is_guest": is_guest
+        }
+    except Exception as e:
+        return{
+            "id": None,
+            "is_guest": False,
+            "error": str(e)
+        }
+
+
+@app.route('/auth/guest', methods=['POST'])
+def create_guest_session():
+    #creates a unique id for the guest that just starts with guest tag
+    guest_id = f'guest_{uuid.uuid4().hex}'
+
+    token = create_access_token(identity=guest_id, expires_delta=timedelta(hours=1), additional_claims={"is_guest": True})
+
+    return jsonify({
+        "message": "Guest session created successfully.",
+        "token": token,
+        "is_guest": True
+    }), 200
+
+
+
+
+
 
 @app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
