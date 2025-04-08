@@ -609,16 +609,17 @@ def user_allergies():
                 db.session.rollback()
                 return jsonify({"message": "Error updating allergy information.", "error": str(e)}), 500    
 
-
 # endpoint for getting menu information
-# later change it to '/menu/<restaurant_id>
-@app.route('/menu', methods=['GET'])
+@app.route('/menu/<restaurant_id>', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
-def get_menu():
-    restaurant = Restaurant.query.filter_by(name="JP's Diner").first()
-    
+def get_menu(restaurant_id):
+    print(f"Fetching menu for restaurant_id: {restaurant_id}")  # Debugging line to check if the ID is received
+
+    # Query restaurant by ID
+    restaurant = Restaurant.query.filter_by(id=restaurant_id).first()
+
     if not restaurant:
-        return jsonify({"error": "JP's Diner not found"}), 404
+        return jsonify({"error": "Restaurant not found"}), 404
 
     #checks for user allergies if authenticated
     user_allergens = []
@@ -665,22 +666,17 @@ def get_menu():
     menu_items = Menu.query.filter_by(restaurant_id=restaurant.id).all()
     menu_list = []
 
-
     for item in menu_items:
-        # get all option mappings for the menu item
         option_mappings = MenuOptionMapping.query.filter_by(menu_id=item.id).all()
-        
-        # change option mappings to a dictionary for easier access
         option_groups = {}
+
         for mapping in option_mappings:
             option_group = MenuOptionGroup.query.get(mapping.option_group_id)
             if not option_group:
                 continue
-            
-            # make option items a list for each group
             if option_group.description not in option_groups:
                 option_groups[option_group.description] = []
-            
+
             option_items = MenuOptionItem.query.filter_by(group_id=option_group.id).all()
             for option_item in option_items:
                 option_groups[option_group.description].append({
@@ -698,26 +694,8 @@ def get_menu():
             "allergens": item.allergens.split(", ") if item.allergens else [],
             "description": item.description if item.description else None,
             "image": url_for('static', filename=f"menu_img/{item.image_filename}", _external=True) if item.image_filename else None,
-            "options": option_groups  # put a list of option items for each group
+            "options": option_groups
         })
-
-    # calculate open status for the restaurant
-    try:
-        hours = json.loads(restaurant.hours) if restaurant.hours else {}
-    except json.JSONDecodeError:
-        hours = {}
-    today = datetime.today().strftime('%A')
-    current_time = datetime.now().strftime('%I:%M %p')
-    status = "Closed"
-    if isinstance(hours, dict) and today in hours and "Closed" not in hours[today]:
-        try:
-            open_time, close_time = hours[today].split(" - ")
-            if open_time <= current_time <= close_time:
-                status = f"Open, Closes {close_time}"
-            else:
-                status = f"Closed, Opens {open_time}"
-        except ValueError:
-            status = "Unknown hours format"
 
     return jsonify({
         "restaurant": {
@@ -727,8 +705,8 @@ def get_menu():
             "phone": restaurant.phone,
             "category": restaurant.category if restaurant.category else None,
             "price_range": restaurant.price_range if restaurant.price_range else None,
-            "hours": json.dumps(hours),
-            "status": status,
+            "hours": restaurant.hours,
+            "status": "Open/Closed status here",  # You can calculate status here if needed
             "image": url_for('static', filename=f"restaurant_img/{restaurant.image_filename}", _external=True) if restaurant.image_filename else None
         },
         "menu": menu_list

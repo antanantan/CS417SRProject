@@ -21,34 +21,45 @@ import Card from '@/components/Steps_Bottom.vue';
 <div v-if="selectedMarker" style="text-align: center; font-size: x-large;">
   <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
   <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
+  <button @click="confirmSelection" :disabled="!selectedMarker">Confirm Selection</button>
 </div>
 <div v-else>
   <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
 </div>
-
-
-
   <Card></Card>
 </template>
 
-
 <script>
 import L from "leaflet";
+import { useRouter } from 'vue-router';  // Import the useRouter hook
 
 export default {
+  props: ['restaurantId'],
   data() {
     return {
       zip_entered: '', 
       map_displayed: '',
       markers: [],
       errorMessage: null,
-      selectedMarker: null,
+      selectedMarker: null, // Will hold the selected restaurant's data
     };
   },
   methods: {
+    // Trigger navigation to the menu page after the selection
+    proceedToMenu(restaurantId) {
+      this.$router.push(`/menu/${restaurantId}`);  // Using this.$router for Options API
+    },
+
+    // Confirm the restaurant selection
+    confirmSelection() {
+      if (this.selectedMarker) {
+        this.proceedToMenu(this.selectedMarker.id); // Navigate to the menu page with the selected restaurant ID
+      }
+    },
+
     async generateMap() {
       if (!this.zip_entered) {
-        alert('please enter a zip code.')
+        alert('Please enter a zip code.')
         return;
       }
 
@@ -84,14 +95,15 @@ export default {
           });
           
         } else {
-          this.errorMessage = data.error || 'error generating map.';
+          this.errorMessage = data.error || 'Error generating map.';
         }
       }
       catch (error) {
-        this.errorMessage = 'error generating map.';
+        this.errorMessage = 'Error generating map.';
         console.error(error);
       }
     },
+
     async handleMarkerSelection(markerData) {
       try {
         const response = await fetch('http://localhost:5000/location_select', {
@@ -101,16 +113,13 @@ export default {
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error. status: ${response.status}`);
+          throw new Error(`HTTP error. Status: ${response.status}`);
         }
 
         const data = await response.json();
 
         if (data.status === 'success') {
           this.selectedMarker = data.selected_marker;
-
-          // Now, after the marker is selected, trigger /send_location
-          this.fetchSelectedLocation();
         } else {
           console.error('Error:', data.error);
         }
@@ -119,29 +128,32 @@ export default {
       }
     },
 
-    async fetchSelectedLocation() {
+    async fetchMenuForRestaurant(restaurantId) {
       try {
-        const response = await fetch('http://localhost:5000/send_location', {
+        const response = await fetch(`http://localhost:5000/menu/${restaurantId}`, {
           method: 'GET',
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error. status: ${response.status}`);
+          throw new Error(`HTTP error. Status: ${response.status}`);
         }
 
         const data = await response.json();
-        if (data.status === 'success') {
-          this.selectedMarker = data.selected_marker;
-          console.log('Selected Location Data:', data.selected_marker);
-          // You can update your UI with the selected location here.
+
+        if (data.restaurant) {
+          console.log('Restaurant Data:', data.restaurant);
+          console.log('Menu Data:', data.menu);
+
+          // You can update your UI with the restaurant and menu data here.
         } else {
-          console.error('Error:', data.error);
+          console.error('Error fetching menu data:', data.error);
         }
       } catch (error) {
-        console.error('Error fetching selected location:', error);
+        console.error('Error fetching menu:', error);
       }
     },
   },
+
   mounted() {
     fetch('/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}})
       .then((response) => response.json())
@@ -149,13 +161,13 @@ export default {
         if (data.status === 'success') {
           this.handleMarkerSelection(data.selected_marker);
         }
-        
       })
       .catch((error) => {
-        console.error('error fetching marker data:', error);
+        console.error('Error fetching marker data:', error);
       });
-    }
-  };
+    console.log('Restaurant ID:', this.restaurantId);
+  },
+};
 </script>
 
 <style scoped>
