@@ -2,10 +2,10 @@ from flask import Flask
 from datetime import timedelta, datetime
 from flask import flash, jsonify, g, request, session, make_response, url_for
 from flask_cors import CORS, cross_origin
-import os, sqlite3, folium, pandas, json
+import os, sqlite3, folium, pandas, json, uuid
 from flask_sqlalchemy import SQLAlchemy
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt, decode_token
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
 from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
@@ -48,6 +48,91 @@ def index():
 def close_connection(exception=None):
     db.session.remove()
 
+
+
+guest_storage = {}
+
+def set_guest_data(key, value):
+    guest_storage[key] = {
+        "value": value,
+        "expires_at": datetime.now() + timedelta(hours=1)  
+    }
+
+# get guest data + delete if expired
+def get_guest_data(key):
+    data = guest_storage.get(key)
+    if data and data["expires_at"] > datetime.now():
+        return data["value"]
+    elif data:
+        del guest_storage[key]
+    return None
+
+#delete guest key
+def del_guest_data(key):
+    if key in guest_storage:
+        del guest_storage[key]
+        return True
+    return False
+
+def get_user_or_guest():
+    try:
+        jwt_data = get_jwt()
+        user_id = get_jwt_identity()
+        is_guest = jwt_data.get('is_guest', False)
+
+        return {
+            "user_id": user_id, 
+            "is_guest": is_guest
+        }
+    except Exception as e:
+        return{
+            "user_id": None,
+            "is_guest": False,
+            "error": str(e)
+        }
+
+
+@app.route('/auth/guest', methods=['POST'])
+def create_guest_session():
+    #creates a unique id for the guest that just starts with guest tag
+    guest_id = f'guest_{uuid.uuid4().hex}'
+
+    token = create_access_token(identity=guest_id, expires_delta=timedelta(hours=1), additional_claims={"is_guest": True})
+
+    return jsonify({
+        "message": "Guest session created successfully.",
+        "token": token,
+        "is_guest": True
+    }), 200
+
+@app.route('/auth/check', methods=['GET'])
+@jwt_required(optional=True)
+def check_auth():
+    try:
+        identity = get_jwt_identity()
+
+        if not identity:
+            return jsonify({
+                "authenticated": False,
+                "is_guest": False,
+            })
+    
+        jwt_data = get_jwt()
+        is_guest = jwt_data.get('is_guest', False)
+    
+        return jsonify({
+            "authenticated": True,
+            "is_guest": is_guest
+        }), 200
+
+    except Exception as e:
+        return jsonify({
+            "authenticated": False,
+            "is_guest": False,
+            "error": str(e)
+        }), 200
+
+
 # function for handling account creation
 @app.route('/auth/register', methods=['GET', 'POST'])
 def register():
@@ -55,6 +140,7 @@ def register():
     username = data.get('username')
     email = data.get('email')
     password = data.get('password')
+    guest_token = data.get('guest_token')
 
     if not username or not email or not password:
         return jsonify({"message": "Missing required fields. Please try again."}), 400
@@ -73,11 +159,38 @@ def register():
         db.session.add(new_user)
         db.session.commit()
 
-        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user
+        token = create_access_token(identity=str(new_user.id)) # creates a token for the new user:
+        
+        # add if converting from guest to transer allergies to new account
+        if guest_token:
+            try:
+                #Extract guest ID from token
+                guest_data = jwt.decode(guest_token, app.config['JWT_SECRET_KEY'], algorithms=["HS256"])
+
+                guest_id = guest_data.get('sub')
+                if guest_id:
+                    # Get allergies from guest storage
+                    guest_allergies = get_guest_data(f'guest_allergies:{guest_id}')
+                    
+                    if guest_allergies:
+                        for allergy in guest_allergies:
+                            allergen_id = allergy.get('allergen_id')
+                            scale = allergy.get('scale', 0)  
+                            
+                            # Check if allergen exists in the database
+                            allergen = db.session.get(Allergen, allergen_id)
+                            if allergen:
+                                ua = UserAllergy(user_id=new_user.id, allergen_id=allergen_id, scale=scale)
+                                db.session.add(ua)
+                            db.session.commit()
+
+                    del_guest_data(f'guest_allergies:{guest_id}')  # Clear guest allergies after transfer
+                    print(f'Successfully transferred allergies from guest {guest_id} to user {new_user.id}')
+            except Exception as e:
+                print(f'Error transferring allergies: {str(e)}')
 
         return jsonify({"message": "Account created successfully", 'token': token}), 201
-
-    
+          
     except Exception as e:
         db.session.rollback()
         return jsonify({"message": "Error creating account", "error": str(e)}), 500
@@ -85,6 +198,9 @@ def register():
 
 
 # TODO: handle unique characters as appropriate and fix whatever this is
+
+
+
 @app.route('/auth/login', methods=['POST'])
 def login():
 # pulling data from login form
@@ -108,29 +224,66 @@ def login():
 @app.route('/user/profile', methods=['GET'])
 @jwt_required() 
 def profile():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)  
-    if user:
-        allergies = db.session.query(Allergen.name).join(UserAllergy).filter(UserAllergy.user_id == user_id).all()
-        allergy_list = [allergy[0] for allergy in allergies]
-        
+    user_data = get_user_or_guest()
+
+    if user_data["is_guest"]:
+        guest_id = user_data["user_id"]
+        guest_allergies = get_guest_data(f'guest_allergies:{guest_id}')
+        allergies = []
+
+        #gets allergy profile
+        if guest_allergies:
+            allergens_ids = [allergy.get('allergen_id') for allergy in guest_allergies]
+            allergens = Allergen.query.filter(Allergen.id.in_(allergens_ids)).all()
+            allergies = [allergen.name for allergen in allergens]
+            
         return jsonify({
-            "username": user.username,
-            "email": user.email,
-            "allergies": allergy_list
+            "username": "Guest",
+            "email": "",
+            "allergies": allergies,
+            "is_guest": True,
         }), 200
-    return jsonify({"message": "User not found."}), 404
+
+    #normal user
+    else: 
+        user_id = user_data["user_id"]
+        user = db.session.get(User, user_id)
+
+        if user:
+            allergies = db.session.query(Allergen.name).join(UserAllergy).filter(UserAllergy.user_id == user_id).all()
+            allergy_list = [allergy[0] for allergy in allergies]
+            
+            return jsonify({
+                "username": user.username,
+                "email": user.email,
+                "allergies": allergy_list,
+                "is_guest": False,
+            }), 200
+        return jsonify({"message": "User not found."}), 404
+
 
 # function to handle user logout
 @app.route('/auth/logout', methods=['POST'])
 @jwt_required() # user must be logged in to log out
 def logout():
+    user_data = get_user_or_guest()
+    if user_data["is_guest"]:
+        guest_id = user_data["user_id"]
+        del_guest_data(f'guest_allergies:{guest_id}')
+        del_guest_data(guest_id)
+        return jsonify({"message": "Guest session ended."}), 200
+    
     return jsonify ({"message": "you have been logged out."}), 200 # frontend token gets deleted from local storage and redirect to login page
 
 @app.route('/user/delete', methods=['DELETE'])
 @jwt_required()
 def delete_account():
-    user_id = get_jwt_identity()
+    user_data = get_user_or_guest()
+
+    if user_data["is_guest"]:
+        return jsonify({"message": "Guest accounts cannot be deleted."}), 403
+
+    user_id = user_data["user_id"]
     user = db.session.get(User, user_id)
 
     if not user:
@@ -237,6 +390,7 @@ def handle_marker_selection():
         print(f"Error occurred: {str(e)}")
         return jsonify({"error": "An error occurred while processing the data."}), 500
 
+# TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # Route to retrieve the selected location (for menu page)
 @app.route('/send_location', methods=['GET'])
 def get_selected_location():
@@ -256,6 +410,68 @@ def get_selected_location():
 
 
 # TODO: implement a guest login function
+
+guest_storage = {}
+
+
+def set_guest_data(key, value):
+    guest_storage[key] = {
+        "value": value,
+        "expires_at": datetime.now() + timedelta(hours=1)  
+    }
+
+# get guest data + delete if expired
+def get_guest_data(key):
+    data = guest_storage.get(key)
+    if data and data["expires_at"] > datetime.now():
+        return data["value"]
+    elif data:
+        del guest_storage[key]
+    return None
+
+#delete guest key
+def del_guest_data(key):
+    if key in guest_storage:
+        del guest_storage[key]
+        return True
+    return False
+
+def get_user_or_guest():
+    try:
+        jwt_data = get_jwt()
+        user_id = get_jwt_identity()
+        is_guest = jwt_data.get('is_guest', False)
+
+        return {
+            "user_id": user_id, 
+            "is_guest": is_guest
+        }
+    except Exception as e:
+        return{
+            "id": None,
+            "is_guest": False,
+            "error": str(e)
+        }
+
+
+@app.route('/auth/guest', methods=['POST'])
+def create_guest_session():
+    #creates a unique id for the guest that just starts with guest tag
+    guest_id = f'guest_{uuid.uuid4().hex}'
+
+    token = create_access_token(identity=guest_id, expires_delta=timedelta(hours=1), additional_claims={"is_guest": True})
+
+    return jsonify({
+        "message": "Guest session created successfully.",
+        "token": token,
+        "is_guest": True
+    }), 200
+
+
+
+
+
+
 @app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_allergens():
@@ -274,16 +490,39 @@ def get_allergens():
 @app.route('/user/allergies', methods=['GET', 'POST'])
 @jwt_required()
 def user_allergies():
-    user_id = get_jwt_identity()
-    user = db.session.get(User, user_id)
-    if not user:
-        return jsonify({"message": "Not logged in or user not found."}), 404
+    user_data = get_user_or_guest()
+    user_id = user_data["user_id"]
+    is_guest = user_data["is_guest"]
 
     if request.method == 'GET':
-        # return allergen names
+
+        if is_guest:
+            #checks for guest user's allergies which is stored in temp storage
+            guest_allergies = get_guest_data(f'guest_allergies:{user_id}')
+            if guest_allergies:
+                #adds allergy names 
+                result = []
+                for allergy in guest_allergies:
+                    allergen_id = allergy.get('allergen_id')
+                    allergen = db.session.get(Allergen, allergen_id)
+                    if allergen:
+                        result.append({
+                            'allergen_id': allergen.id,
+                            'name': allergen.name,
+                            'scale': allergy.get('scale', 0)
+                        })
+                return jsonify(result), 200
+            return jsonify([]), 200
+        
+        # normal user, check db
+        user = db.session.get(User, user_id)
+        if not user:
+            return jsonify({"message": "Not logged in or user not found."}), 404
+        
+        #retrieve allergies 
         allergies = (
             db.session.query(UserAllergy, Allergen)
-            .join(Allergen, UserAllergy.allergen_id == Allergen.id)
+            .join(Allergen, UserAllergy.allergen_id == Allergen.id) 
             .filter(UserAllergy.user_id == user.id)
             .all()
         )
@@ -304,31 +543,71 @@ def user_allergies():
         if allergies is None:
             return jsonify({"message": "No allergies data found."}), 400
 
-        UserAllergy.query.filter_by(user_id=user.id).delete()
-        # db.session.commit()
-
-        # if new allergies list is empty
         if len(allergies) == 0:
-            db.session.commit()
-            return jsonify({"message": "Allergies cleared."}), 200
+            if is_guest:
+                #clear temp storage
+                del_guest_data(f'guest_allergies:{user_id}')
+            else:
+                #clear from db for normal users
+                user = db.session.get(User, user_id)
+                if not user:
+                    return jsonify({"message": "User not found."}), 404 
+                UserAllergy.query.filter_by(user_id=user.id).delete()
+                db.session.commit()
+            return jsonify({"message": "Allergy information cleared."}), 200
 
-        # add new allergy information
-        for allergy in allergies:
-            allergen_id = allergy.get("allergen_id")
-            scale = allergy.get("scale", '')  
-            if allergen_id is None or scale is None:
-                continue
-            if scale not in [0, 1, 2, 3]: 
-                return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+        if is_guest:
+            valid_allergies = []  
+            # store allergies in temp storage 
+            for allergy in allergies:
+                allergen_id = allergy.get("allergen_id")
+                scale = allergy.get("scale", 0)  
 
-            allergen = db.session.get(Allergen, allergen_id)
-            if allergen:
-                ua = UserAllergy(user_id=user.id, allergen_id=allergen_id, scale=scale)
-                db.session.add(ua)
+                if allergen_id is None:
+                    continue
 
-        db.session.commit()
-        print("Committed successfully. Allergies count:", UserAllergy.query.filter_by(user_id=user.id).count())
-        return jsonify({"message": "Allergy information updated successfully."}), 200
+                if scale not in [0, 1, 2, 3]:
+                    return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+                
+                allergen = db.session.get(Allergen, allergen_id)
+                if allergen:
+                    valid_allergies.append({
+                        "allergen_id": allergen_id,
+                        "scale": scale
+                    })
+            #store valid allergies for guest 
+            set_guest_data(f'guest_allergies:{user_id}', valid_allergies)
+            return jsonify({"message": "Allergy information updated successfully."}), 200
+        else:
+            # normal user, store allergies
+            user = db.session.get(User, user_id)
+            if not user:
+                return jsonify({"message": "User not found."}), 404
+            
+            #clears existing allergies to replace with new ones
+            UserAllergy.query.filter_by(user_id=user.id).delete() 
+                
+            #add new allergy info
+            try:
+                for allergy in allergies:
+                    allergen_id = allergy.get("allergen_id")
+                    scale = allergy.get("scale", '')  
+                    if allergen_id is None or scale is None:
+                        continue
+                    if scale not in [0, 1, 2, 3]: 
+                        return jsonify({"message": f"Invalid scale value: {scale}. Allowed values are 0, 1, 2, 3."}), 400
+
+                    allergen = db.session.get(Allergen, allergen_id)
+                    if allergen:
+                        ua = UserAllergy(user_id=user.id, allergen_id=allergen_id, scale=scale)
+                        db.session.add(ua)
+
+                db.session.commit()
+                print("Committed successfully. Allergies count:", UserAllergy.query.filter_by(user_id=user.id).count())
+                return jsonify({"message": "Allergy information updated successfully."}), 200
+            except Exception as e:
+                db.session.rollback()
+                return jsonify({"message": "Error updating allergy information.", "error": str(e)}), 500    
 
 # endpoint for getting menu information
 @app.route('/menu/<restaurant_id>', methods=['GET'])
@@ -342,11 +621,51 @@ def get_menu(restaurant_id):
     if not restaurant:
         return jsonify({"error": "Restaurant not found"}), 404
 
-    # Fetch the menu items for the restaurant
+    #checks for user allergies if authenticated
+    user_allergens = []
+    auth_header = request.headers.get('Authorization')
+
+    if auth_header and auth_header.startswith('Bearer '):
+        try:
+            token = auth_header.split(' ')[1]
+
+        #verify and decode token
+            user_data = None
+            try:    
+                user_data = decode_token(token)
+                user_id = user_data.get('sub')
+                is_guest = user_data.get('is_guest', False)
+
+                if is_guest:
+                    guest_allergies = get_guest_data(f'guest_allergies:{user_id}')
+                    if guest_allergies:
+                        #process guest allergies for filtering
+                        for allergy in guest_allergies:
+                            allergen_id = allergy.get('allergen_id')
+                            allergen = db.session.get(Allergen, allergen_id)
+                            if allergen:
+                                user_allergens.append({
+                                    'name': allergen.name,
+                                    'scale': allergy.get('scale', 0)
+                                })
+                else:
+                    #regular user 
+                    user_allergies = UserAllergy.query.filter_by(user_id=user_id).all()
+                    for ua in user_allergies:
+                        allergen = db.session.get(Allergen, ua.allergen_id)
+                        if allergen:
+                            user_allergens.append({
+                                'name': allergen.name,
+                                'scale': ua.scale
+                            })
+            except Exception as e:
+                return jsonify({"error": f"Error decoding token: {str(e)}"}), 401
+        except Exception as ef:
+            return jsonify({"error": "Error decoding token"}), 401
+
     menu_items = Menu.query.filter_by(restaurant_id=restaurant.id).all()
     menu_list = []
 
-    # Process menu items
     for item in menu_items:
         option_mappings = MenuOptionMapping.query.filter_by(menu_id=item.id).all()
         option_groups = {}

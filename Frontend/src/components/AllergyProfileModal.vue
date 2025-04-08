@@ -76,7 +76,7 @@ const clearSearch = () => {
 
 // アレルゲンの選択・解除
 const toggleAllergen = (allergen) => {
-  allergenItems.selected = !allergenItems.selected;
+  allergen.selected = !allergen.selected;
 };
 
 // すべてのアレルギーを適用
@@ -106,9 +106,9 @@ const applyAllAllergies = async () => {
 
 // すべてのアレルギーをリセット
 const resetAllAllergies = () => {
-  allergenItems.value.forEach((allergy) => {
-    allergy.severity = "";
-    allergy.selected = false;
+  allergenItems.value.forEach((allergen) => {
+    allergen.severity = "";
+    allergen.selected = false;
   });
 };
 
@@ -163,7 +163,7 @@ const close = () => {
               <h3 class="text-md font-bold text-gray-800 border-b pb-1">{{ group.name }}</h3>
               <ul class="mt-2 space-y-2">
                 <li
-                  v-for="allergen in allergenItems.filter(a => a.group_id === group.id)"
+                  v-for="allergen in group.allergens"
                   :key="allergen.id"
                   class="flex items-center"
                 >
@@ -172,7 +172,6 @@ const close = () => {
                     :id="`allergen-${allergen.id}`"
                     :name="`allergen-${allergen.id}`"
                     v-model="allergen.selected"
-                    @change="toggleAllergen(allergen)"
                     class="mr-2"
                   />
                   <span class="text-gray-700">{{ allergen.name }}</span>

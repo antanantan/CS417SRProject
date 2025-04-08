@@ -8,6 +8,10 @@ import axios from "axios";
 
 const router = useRouter();
 
+const allergenGroups = ref([]);
+const allergenItems = ref([]);
+const allergies = ref([]);
+
 // code for handling modal
 const isModalVisible = ref(true);
 const closeModal = (closeandNavigate) => {
@@ -18,17 +22,14 @@ const closeModal = (closeandNavigate) => {
 };
 
 // code for pulling allergy list from backend
-const allergies = ref([]);
 const loadAllergies = async () => {
-  const token = localStorage.getItem("jwt"); 
+  const token = localStorage.getItem("token"); 
   try {
-    const response = await api.get('/allergens', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
+    const response = await api.get('/allergens');
     console.log("API Response:", response.data);
 
-    allergenGroups.value = data.allergen_groups;
-    allergenItems.value = data.allergen_items;
+    allergenGroups.value = response.data.allergen_groups;
+    allergenItems.value = response.data.allergen_items;
   } catch (error) {
     console.error('Error loading allergies:', error);
   }
