@@ -2,80 +2,71 @@
 import Card from '@/components/Steps_Bottom.vue';
 import { ref, computed } from 'vue';
 import axios from 'axios';
+
 const createAccount = () => {
   router.push('/create'); 
 };
+
+const cardNumber = ref('****-****-****-****');
+const expiryDate = ref('**/**');
+const cvv = ref('***');
+const paymentMessage = ref('');
+
+const processPayment = () => {
+  paymentMessage.value = "payment processed!";
+}
+
 /** ref: ChatGPT. placeholder script 
 const orderItems = ref([
-  { name: "Pizza", quantity: 2, price: 15.99 },
-  { name: "Burger", quantity: 1, price: 9.49 },
-  { name: "Soda", quantity: 3, price: 2.49 },
+  {},
 ]);
-const cardNumber = ref('');
-const expiryDate = ref('');
-const cvv = ref('');
-const billingAddress = ref('');
-
-// Computed property for total price
+ price
 const totalPrice = computed(() => {
   return orderItems.value.reduce(
     (total, item) => total + item.price * item.quantity,
     0
   );
-});
-
-// Methods
-const processPayment = () => {
-  // Logic to handle the payment processing
-  console.log("Processing payment...");
-  // For example, you can print out the payment details
-  console.log({
-    cardNumber: cardNumber.value,
-    expiryDate: expiryDate.value,
-    cvv: cvv.value,
-    billingAddress: billingAddress.value,
-  });
-};*/
+});*/
 </script>
 
 <template>
     <h1>Step 4: Place your Order</h1>
 
-    <h2>Order Summary</h2>
+    <h2 style="font-size: x-large; padding-left: 7%; font-weight: bold;">Order Summary</h2>
+    <br>
     <div class="order-items">
-        <div class="order-item">
-          <div class="item-name">Item</div>
-          <div class="item-quantity">Quantity</div>
-          <div class="item-price">$Price</div>
-    </div>
-    <div class="order-total">
-      <h3>Total: $Total</h3>
-    </div>
+      <div class="order-item">
+        <div class="item-name">Item</div>
+        <div class="item-quantity">Quantity</div>
+        <div class="item-price">$Price</div>
+      </div>
+      <div class="order-total">
+        <h3 style="padding-right: 7%;">Total: $Total</h3>
+      </div>
     </div>
 
     <div class="payment-section">
-      <h2>Payment Information</h2>
+      <h2 style="font-size: larger; font-weight: bold;">Payment Information</h2>
 
-      <form @submit.prevent="processPayment">
         <div class="card-details">
           <label for="cardNumber">Card Number</label>
-          <input type="text" id="cardNumber" placeholder="Enter your card number" required />
-
+          <p>{{ cardNumber }}</p>
           <label for="expiryDate">Expiry Date</label>
-          <input type="text" id="expiryDate" placeholder="MM/YY" required />
-
+          <p>{{ expiryDate }}</p>
           <label for="cvv">CVV</label>
-          <input type="text" id="cvv" placeholder="CVV" required />
+          <p>{{ cvv }}</p>
         </div>
 
+        <form @submit.prevent="processPayment">
         <div class="payment-buttons">
           <button type="submit" class="pay-btn">Pay Now</button>
           <button type="button" class="cancel-btn">Cancel Order</button>
         </div>
       </form>
+      <div class="confirmation">{{ paymentMessage }}</div>
     </div>
 
-    <RouterLink to="/create" class="text-blue-500 hover:underline" @click.prevent="createAccount">
+    <RouterLink to="/create" class="text-blue-500 hover:underline" @click.prevent="createAccount" style="text-align: center; display: block; font-size: x-large;">
       To save information for future orders, please create an account.
     </RouterLink>
     
@@ -86,16 +77,19 @@ const processPayment = () => {
 h1 {
   font-size: xx-large;
   text-align: center;
+  padding-top: 2%;
 }
 .order-item .item-name {
   font-weight: bold;
   color: #333;
+  padding-left: 8%;
 }
 
 .order-item .item-quantity,
 .order-item .item-price {
   font-size: 1rem;
   color: #666;
+  padding-left: 9%;
 }
 
 .order-total {
@@ -104,7 +98,13 @@ h1 {
   font-weight: bold;
   color: #333;
 }
-
+.confirmation {
+  color:#388e3c;
+  font-size: xx-large;
+  text-align: center;
+  font-weight: bolder;
+  padding: 2%;
+}
 .payment-section {
   background-color: #ffffff;
   padding: 20px;
@@ -152,6 +152,17 @@ h1 {
   display: flex;
   justify-content: space-between;
 }
+p {
+  display: inline-block; 
+  padding: 8px; 
+  border: 1px solid #ccc; 
+  border-radius: 4px;
+  background-color: #f9f9f9; 
+  font-family: 'Arial', sans-serif;
+  font-size: 14px; 
+  width: 300px; 
+  word-wrap: break-word;
+}
 
 button {
   padding: 12px 20px;
@@ -172,12 +183,12 @@ button {
 }
 
 .cancel-btn {
-  background-color: #ff5c5c;
+  background-color: #f6689c;
   color: white;
   width: 48%;
 }
 
 .cancel-btn:hover {
-  background-color: #ff3b3b;
+  background-color: #d5213f;
 }
 </style>

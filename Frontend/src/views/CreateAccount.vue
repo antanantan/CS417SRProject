@@ -90,7 +90,6 @@ const register= async () => {
 </script>
 
 <template>
-<h1>Create Your Account to Get Started.</h1>
 
 <div class="flex items-center justify-center min-h-screen bg-gray-100">
     <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">
