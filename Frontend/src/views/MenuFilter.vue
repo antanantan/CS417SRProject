@@ -1,25 +1,25 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
 import { Icon } from '@iconify/vue';
-import { useRouter } from 'vue-router';
-import { ref, computed, onMounted} from "vue";
+import { useRouter, useRoute } from 'vue-router';
+import { ref, computed, onMounted } from "vue";
 import { api, authApi } from '@/api/auth.js';
 import axios from "axios";
 import { svg } from 'leaflet';
 import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
 
 const router = useRouter();
+const route = useRoute(); // To access route parameters
 
 // make reactive variables for the selected restaurant and menu
 const restaurant = ref({ name: "", address: "", phone: "", category: "", price_range:"", status: "", hours: "{}", image:""});
 const menu = ref([]);
-// const userAllergies = ref([]); 
 
-// function to fetch menu data from the Flask API
-const fetchMenu = async () => {
+// Function to fetch menu data for the selected restaurant
+const fetchMenu = async (restaurantId) => {
   try {
-    console.log("Fetching menu data from Flask...");
-    const response = await api.get("/menu");
+    console.log("Fetching menu data for restaurant:", restaurantId);
+    const response = await api.get(`/menu/${restaurantId}`);
     console.log("API Response:", response.data);
 
     restaurant.value = response.data.restaurant;
@@ -27,11 +27,16 @@ const fetchMenu = async () => {
   } catch (error) {
     console.error("Error fetching menu:", error);
   }
-};
+};  
 
+// When the component is mounted, fetch the restaurant's menu based on the ID from the URL
 onMounted(() => {
-  fetchMenu();
-  // fetchUserAllergies();
+  const restaurantId = route.params.restaurantId; // Get the restaurantId from the URL
+  if (restaurantId) {
+    fetchMenu(restaurantId); // Fetch the menu for the restaurant
+  } else {
+    console.error("No restaurant ID found in the URL");
+  }
 });
 
 // menu filtering by search and user allergies
@@ -93,7 +98,6 @@ const clearSearch = () => {
   searchQuery.value = "";
 };
 
-
 // functions to parse and display restaurant hours
 const hours = ref(null);
 const showHours = ref(false);
@@ -125,8 +129,6 @@ const formattedPhone = computed(() => {
   return restaurant.value.phone.replace(/(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
 });
 
-
-
 const selectedItem = ref(null); // selected menu item for modal
 const selectedOptions = ref({});
 
@@ -149,7 +151,6 @@ const addToOrder = () => {
   });
   closeModal();
 };
-
 
 const onInput = () => {
   console.log("Searching for:", searchQuery.value);

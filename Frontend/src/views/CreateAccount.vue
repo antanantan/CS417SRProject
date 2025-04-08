@@ -1,5 +1,5 @@
 <script setup>
-import { ref} from 'vue';
+import { ref, onMounted} from 'vue';
 import { useRouter } from 'vue-router';
 import { api, authApi } from '@/api/auth.js';
 import axios from 'axios';
@@ -10,49 +10,86 @@ const new_username = ref('');
 const new_password = ref('');
 const new_email = ref('');
 const errorMessage = ref(''); 
+const guestToken = ref(null);
+const convertGuest = ref(false);
 
-const continueAsGuest = () => {
-  router.push('/allergy_list'); 
+//checks if user is a guest with a token 
+onMounted(() => {
+  if(localStorage.getItem('is_guest') === 'true' && localStorage.getItem('token')){
+    guestToken.value = localStorage.getItem('token');
+    convertGuest.value = true;
+  }
+});
+
+const continueAsGuest = async () => {
+  try {
+    //create guest session
+    const response = await api.post('/auth/guest');
+    if (response.status == 200) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('is_guest', true);
+      router.push('/allergy_list');
+    }
+  } catch (err) {
+    console.error ('Unable to create guest session', err);
+    errorMessage.value = "Unable to create guest session";
+  }
 };
 
 const GoToLogin = () => {
   router.push('/login');
 };  
 
-const register= async () =>{
+const register= async () => {
   if(!new_username.value || !new_email.value || !new_password.value){
     errorMessage.value = 'Please fill out all fields';
     return;
   }
+
   try{
-    const response = await api.post('/auth/register',{
+    const payload = {
       username: new_username.value,
       email: new_email.value,
-      password: new_password.value,  
-  }
-);
-  if (response.status === 201) {
-    console.log("Account created: ,", new_username.value);
-    localStorage.setItem('token', response.data.token);
-    router.push('/profile');
-  }
-} catch(error){
-  if (error.response){  
-    const status = error.response.status;
-    if (status === 422) {
-      errorMessage.value = 'Username or email already in use. Please choose another.';
-    } else if(status === 400){
-      errorMessage.value = 'Invalid input.';
-    } else {
-      errorMessage.value = error.response.data.message;
+      password: new_password.value,
+    };
+    
+    
+    if(convertGuest.value && guestToken.value){
+      payload.guest_token = guestToken.value;
     }
-  }
+
+    const response = await api.post('/auth/register', payload);
+
+    if (response.status === 201) {
+      console.log("Account created: ,", new_username.value);
+      localStorage.removeItem('is_guest');
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('is_guest', false);
+      
+    }
+
+    if (convertGuest.value){
+      alert("Your guest account has been converted to a full account. You can now log in with your new credentials.");
+    }
+
+    router.push('/profile');
+
+  } catch(error){
+    if (error.response){  
+      const status = error.response.status;
+      if (status === 422) {
+        errorMessage.value = 'Username or email already in use. Please choose another.';
+      } else if(status === 400){
+        errorMessage.value = 'Invalid input.';
+      } else {
+        errorMessage.value = error.response.data.message;
+      }
+    }
   }
 };
 </script>
 
 <template>
-<h1>Create Your Account to Get Started.</h1>
 
 <div class="flex items-center justify-center min-h-screen bg-gray-100">
     <div class="w-full max-w-md bg-white rounded-lg shadow-md p-8">

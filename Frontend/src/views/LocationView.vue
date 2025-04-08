@@ -1,6 +1,5 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
-import { api, authApi } from '@/api/auth.js';
 </script>
 
 <template>
@@ -15,62 +14,73 @@ import { api, authApi } from '@/api/auth.js';
   <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
   <br>
 
-<div class="map_container">
-  <iframe v-if="map_displayed" :src="map_displayed"></iframe>
+<div class="map_wrapper">
+  <div ref="map_container" style="height: 100%; width: 100%;"></div>
 </div>
 
-<div>
-  <div v-if="selectedMarker">
-    <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
-    <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
-  </div>
-  <div v-else>
-    <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
-  </div>
+<div v-if="selectedMarker" style="text-align: center; font-size: x-large;">
+  <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
+  <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
+  <button @click="confirmSelection" :disabled="!selectedMarker">Confirm Selection</button>
 </div>
-
+<div v-else>
+  <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
+</div>
   <Card></Card>
 </template>
 
-
 <script>
 import L from "leaflet";
+import { useRouter } from 'vue-router';  // Import the useRouter hook
 
 export default {
+  props: ['restaurantId'],
   data() {
     return {
       zip_entered: '', 
       map_displayed: '',
       markers: [],
       errorMessage: null,
-      selectedMarker: null,
+      selectedMarker: null, // Will hold the selected restaurant's data
     };
   },
   methods: {
+    // Trigger navigation to the menu page after the selection
+    proceedToMenu(restaurantId) {
+      this.$router.push(`/menu/${restaurantId}`);  // Using this.$router for Options API
+    },
+
+    // Confirm the restaurant selection
+    confirmSelection() {
+      if (this.selectedMarker) {
+        this.proceedToMenu(this.selectedMarker.id); // Navigate to the menu page with the selected restaurant ID
+      }
+    },
+
     async generateMap() {
       if (!this.zip_entered) {
-        alert('please enter a zip code.')
+        alert('Please enter a zip code.')
         return;
       }
 
       try {
-        const response = await fetch('/location', {method: 'POST', headers:{'Content-Type': 'application/json'}, body: JSON.stringify({ zip_code: this.zip_entered }),});
+        const response = await fetch('http://localhost:5000/location', {method: 'POST', headers:{'Content-Type': 'application/json'}, body: JSON.stringify({ zip_code: this.zip_entered }),});
         const data = await response.json();
-        if (response.ok) {
-          // Clear any previous map
-          if (this.map_displayed) {
-            this.map_displayed.remove();
+
+        if (response.ok && data && data.length > 0) {
+          const firstRestaurant = data[0];  
+          if (this.map) {
+            this.map.remove();
           }
-          const firstRestaurant = data[0];  // Use the first restaurant to center the map
-          this.map = L.map(this.$refs.mapContainer).setView(
+          this.map = L.map(this.$refs.map_container).setView(
             [firstRestaurant.latitude, firstRestaurant.longitude],
             12
           );
 
-          // Set OpenStreetMap tiles
-          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(this.map);
-
-          // Create markers for each restaurant
+          L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19}).addTo(this.map);
+          this.$nextTick(() => {
+            this.map.invalidateSize();
+          });       
           data.forEach((restaurant) => {
             const marker = L.marker([restaurant.latitude, restaurant.longitude])
               .addTo(this.map)
@@ -79,44 +89,71 @@ export default {
                 ${restaurant.address}
               `)
               .on('click', () => {
-                // When marker is clicked, handle marker selection
                 this.handleMarkerSelection(restaurant);
               });
             this.markers.push(marker);
           });
+          
         } else {
           this.errorMessage = data.error || 'Error generating map.';
-        }}
+        }
+      }
       catch (error) {
-        this.errorMessage = 'error generating map.';
+        this.errorMessage = 'Error generating map.';
         console.error(error);
       }
     },
+
     async handleMarkerSelection(markerData) {
       try {
-        const response = await fetch('/location_select', {
+        const response = await fetch('http://localhost:5000/location_select', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(markerData), 
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(markerData),
         });
 
         if (!response.ok) {
-          throw new Error(`HTTP error! Status: ${response.status}`);
+          throw new Error(`HTTP error. Status: ${response.status}`);
         }
 
-        const data = await response.json();  
+        const data = await response.json();
+
         if (data.status === 'success') {
-          this.selectedMarker = data.selected_marker; 
+          this.selectedMarker = data.selected_marker;
         } else {
-          console.error('Error: ', data.error);
+          console.error('Error:', data.error);
+        }
+      } catch (e) {
+        console.error('Error sending marker data:', e);
+      }
+    },
+
+    async fetchMenuForRestaurant(restaurantId) {
+      try {
+        const response = await fetch(`http://localhost:5000/menu/${restaurantId}`, {
+          method: 'GET',
+        });
+
+        if (!response.ok) {
+          throw new Error(`HTTP error. Status: ${response.status}`);
+        }
+
+        const data = await response.json();
+
+        if (data.restaurant) {
+          console.log('Restaurant Data:', data.restaurant);
+          console.log('Menu Data:', data.menu);
+
+          // You can update your UI with the restaurant and menu data here.
+        } else {
+          console.error('Error fetching menu data:', data.error);
         }
       } catch (error) {
-        console.error('Error sending marker data:', error);
+        console.error('Error fetching menu:', error);
       }
-    }
+    },
   },
+
   mounted() {
     fetch('/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}})
       .then((response) => response.json())
@@ -128,7 +165,8 @@ export default {
       .catch((error) => {
         console.error('Error fetching marker data:', error);
       });
-  }
+    console.log('Restaurant ID:', this.restaurantId);
+  },
 };
 </script>
 
@@ -136,6 +174,7 @@ export default {
 h1 {
   font-size: xx-large;
   text-align: center;
+  padding-top: 2%;
 }
 button {
   border-width: 5px; 
@@ -147,16 +186,22 @@ button {
 button:hover {
   color: darkgreen;
 }
-.map_container {
+.map_wrapper {
   display: flex;
-  justify-content: center;
-}
-iframe {
+  justify-self: center;
   border-width: 1rem; 
   border-radius: 5%;
   border-color: #f27e9f; 
   width: 800px;
   height: 550px;
+  overflow: hidden;
+  align-items: center;
+}
+.map_container div {
+  width: 100%; 
+  height: 100%; 
+  position: relative;
+  position: absolute
 }
 .error-message {
   color: red;

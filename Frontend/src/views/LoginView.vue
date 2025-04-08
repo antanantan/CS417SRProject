@@ -13,8 +13,17 @@ const goToForgotPassword = () => {
   router.push('/forgot-password');
 };
 
-const continueAsGuest = () => {
-  router.push('/allergy_list'); 
+const continueAsGuest = async () => {
+  try {
+    const response = await api.post('/auth/guest');
+    if (response.status == 200) {
+      localStorage.setItem('token', response.data.token);
+      localStorage.setItem('is_guest', true);
+      router.push('/allergy_list');
+    }
+  } catch (err) {
+    console.error ('Unable to create guest session', err);
+  }
 };
 
 
