@@ -8,7 +8,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
+from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping, Cart, CartItem, CartItemOption
 from database.seed_data import seed_db
 
 app = Flask(__name__)
@@ -181,13 +181,8 @@ def create_map(country='US'):
         geolocator = Nominatim(user_agent="app")
         location = geolocator.geocode(f"{zip_code}, {country}")
         if not location:
-            return jsonify({"error": "Could not find location for the given zip code."}), 400
-        
-        map = folium.Map(location=[location.latitude, location.longitude], zoom_start=12)
-
-# marker for the initial zip code, but no need if the restaurants are already marked --> folium.Marker([location.latitude, location.longitude]).add_to(map)
-
-# adjust as needed
+            return jsonify({"error": "could not find location for the given zip code."}), 400
+    
         restaurants = Restaurant.query.filter(
             Restaurant.latitude.between(location.latitude - 0.1, location.latitude + 0.1),
             Restaurant.longitude.between(location.longitude - 0.1, location.longitude + 0.1)
@@ -196,28 +191,64 @@ def create_map(country='US'):
         if cuisine:
             query = query.filter_by(cuisine=cuisine)
 
-        for restaurant in restaurants:
-            restaurant_location = [restaurant.latitude, restaurant.longitude]
-            restaurant_info = f"<b>{restaurant.name}</b><br>{restaurant.address}<br>Phone: {restaurant.phone if restaurant.phone else 'N/A'}"
-            
-            folium.Marker(
-                restaurant_location,
-                popup=folium.Popup(restaurant_info, max_width=300)
-            ).add_to(map)
+        markers = [{
+            'id': restaurant.id,
+            'name': restaurant.name,
+            'latitude': restaurant.latitude,
+            'longitude': restaurant.longitude,
+            'address': restaurant.address,
+        } for restaurant in restaurants]
+        if markers:
+            print(f"Markers: {markers}")
+            return jsonify(markers)
+        else:
+            return "no marker data for this zip code.", 200
 
-        map_path = os.path.join('static', 'map.html')
-
-        map.save(map_path)
-        print("request received!")
-
-        response = jsonify({"map_url": "/static/map.html"})
-        response.headers.add('Access-Control-Allow-Origin', '*')
-        return response, 200
+    
     except Exception as e:
-        return jsonify({"error": f"An error occurred: {str(e)}"}), 500
+        return jsonify({"error": f"an error occurred: {str(e)}"}), 500
+    
+# option to save selected marker for future use
+selected_marker = {}
+
+@app.route('/location_select', methods=['POST'])
+def handle_marker_selection():
+    try:
+        data = request.json  
+        if not data:
+            return jsonify({"error": "No data received"}), 400
+        print(f"received marker data: {data}") 
+
+        selected_marker['address'] = data.get('address')
+        selected_marker['id'] = data.get('id')
+        selected_marker['latitude'] = data.get('latitude')
+        selected_marker['longitude'] = data.get('longitude')
+        selected_marker['name'] = data.get('name') 
+
+        return jsonify({
+            "status": "success",
+            "selected_marker": data
+        }), 200 
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": "An error occurred while processing the data."}), 500
+
+# function to retrieve the selected location (for menu page)
+@app.route('/get_selected_location', methods=['GET'])
+def get_selected_location():
+    try:
+        if not selected_marker:
+            return jsonify({"error": "No marker selected yet"}), 404
+        
+        return jsonify({
+            "status": "success",
+            "selected_marker": selected_marker
+        }), 200 
+    except Exception as e:
+        print(f"Error occurred: {str(e)}")
+        return jsonify({"error": "An error occurred while fetching the data."}), 500
 
 
-# TODO: link allergen information to profile. implementation is *almost* there, just need to ensure that the allergen list is properly saved to a unique user.
 # TODO: implement a guest login function
 @app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
@@ -234,7 +265,7 @@ def get_allergens():
     return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
 
 
-@app.route('/user/allergies', methods=['GET', 'POST'])
+@app.route('/user/allergies', methods=['GET', 'PUT'])
 @jwt_required()
 def user_allergies():
     user_id = get_jwt_identity()
@@ -260,7 +291,7 @@ def user_allergies():
         ]
         return jsonify(result), 200
     
-    elif request.method == 'POST':
+    elif request.method == 'PUT':
         data = request.get_json()
         print("Received data:", data)
         allergies = data.get('allergies') 
@@ -319,13 +350,20 @@ def get_menu():
             
             # make option items a list for each group
             if option_group.description not in option_groups:
-                option_groups[option_group.description] = []
+                option_groups[option_group.id] = {
+                    "description": option_group.description,
+                    "min_quantity": option_group.min_quantity,
+                    "max_quantity": option_group.max_quantity,
+                    "items": []
+                }
             
             option_items = MenuOptionItem.query.filter_by(group_id=option_group.id).all()
             for option_item in option_items:
-                option_groups[option_group.description].append({
+                option_groups[option_group.id]["items"].append({
+                    "id": option_item.id,
                     "name": option_item.name,
-                    "extra_price": option_item.extra_price
+                    "extra_price": option_item.extra_price,
+                    "allergens": option_item.allergens.split(", ") if option_item.allergens else []
                 })
 
         menu_list.append({
@@ -373,6 +411,105 @@ def get_menu():
         },
         "menu": menu_list
     })
+
+
+@app.route('/user/cart', methods=['GET'])
+@jwt_required()
+def get_cart():
+    user_id = get_jwt_identity()
+    cart = Cart.query.filter_by(user_id=user_id).first()
+    if not cart:
+        return jsonify({"cart_items": []}), 200
+
+    result = []
+    for item in cart.items:
+        options = [
+            {
+                "id": opt.option_item.id,
+                "name": opt.option_item.name
+            }
+            for opt in item.options
+        ]
+        result.append({
+            "cart_item_id": item.id,
+            "menu_item_id": item.menu.id,
+            "menu_item_name": item.menu.name,
+            "quantity": item.quantity,
+            "options": options
+        })
+
+    return jsonify({"cart_items": result}), 200
+
+
+@app.route('/user/cart/item', methods=['POST'])
+@jwt_required()
+def add_cart_item():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    menu_id = data.get("menu_item_id")
+    quantity = data.get("quantity", 1)
+    options = data.get("options", [])
+
+    if not menu_id:
+        return jsonify({"message": "Missing menu_item_id."}), 400
+
+    cart = Cart.query.filter_by(user_id=user_id).first()
+    if not cart:
+        cart = Cart(user_id=user_id, restaurant_id=data.get("restaurant_id"))
+        db.session.add(cart)
+        db.session.commit()
+
+    item = CartItem(cart_id=cart.id, menu_id=menu_id, quantity=quantity)
+    db.session.add(item)
+    db.session.flush()  # item.id を取得するため
+
+    for opt in options:
+        option_item_id = opt.get("option_item_id")
+        if option_item_id:
+            db.session.add(CartItemOption(cart_item_id=item.id, option_item_id=option_item_id))
+
+    db.session.commit()
+    return jsonify({"message": "Cart item added", "cart_item_id": item.id}), 201
+
+
+@app.route('/user/cart/item/<int:item_id>', methods=['PATCH'])
+@jwt_required()
+def update_cart_item(item_id):
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    quantity = data.get("quantity")
+    options = data.get("options", [])
+
+    item = CartItem.query.get(item_id)
+    if not item or item.cart.user_id != user_id:
+        return jsonify({"message": "Cart item not found."}), 404
+
+    if quantity is not None:
+        item.quantity = quantity
+
+    # delete existing options
+    CartItemOption.query.filter_by(cart_item_id=item.id).delete()
+    for opt in options:
+        option_item_id = opt.get("option_item_id")
+        if option_item_id:
+            db.session.add(CartItemOption(cart_item_id=item.id, option_item_id=option_item_id))
+
+    db.session.commit()
+    return jsonify({"message": "Cart item updated."}), 200
+
+
+@app.route('/user/cart/item/<int:item_id>', methods=['DELETE'])
+@jwt_required()
+def delete_cart_item(item_id):
+    user_id = get_jwt_identity()
+    item = CartItem.query.get(item_id)
+    if not item or item.cart.user_id != user_id:
+        return jsonify({"message": "Cart item not found."}), 404
+
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"message": "Cart item deleted."}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

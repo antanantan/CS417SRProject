@@ -4,10 +4,11 @@ import {ref, onMounted} from 'vue';
 import { api, authApi } from '@/api/auth.js';
 import { useRouter } from 'vue-router';
 import Card from '@/components/Steps_Bottom.vue';
+import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
 
 const username = ref('');
 const email = ref('');
-const allergies = ref([]);
+// const allergies = ref([]);
 const router = useRouter(); 
 const errorMessage = ref('');
 const newPassword = ref('');  
@@ -21,7 +22,7 @@ const fetchProfile = async () => {
     if (response.data.username) {
         username.value = response.data.username;
         email.value = response.data.email;
-        allergies.value = response.data.allergies || [];
+        // allergies.value = response.data.allergies || [];
     } else {
       console.warn('No username returned:', response.data);
       username.value = null;
@@ -97,21 +98,25 @@ const allergyPage = () => {
 <template>
   <br>
   <div v-if="username" class="profile_container">
-    <h1>Welcome, {{ username }}</h1>
-    <h2>email: {{ email }}</h2>
+    <h1 style="text-align: center; font-weight: bolder; font-size: xx-large;">welcome, {{ username }}</h1>
+    <h2 style="text-align: center; font-size: large; padding-top: 1%;">email address: {{ email }}</h2>
     <br>
-    <div class="allergy_section">
-      <h2 v-if="allergies"> {{ username }}'s allergies...</h2>
-      <h2 v-else>User has no listed allergies</h2>
-        <ul>
-          <li v-for="(allergy, index) in allergies" :key="index">{{ allergy }}</li>
-        </ul>
+
+    <div class="button-line">
+      <button @click="logout">Logout</button>
+      <button @click="allergyPage">Go To Order</button>
+      <button @click="deleteAccount" class="delete-button">Delete Account</button>
     </div>
 
-    <button @click="logout">Logout</button>
-    <button @click="allergyPage">Go To Order</button>
-    <button @click="deleteAccount" class="delete-button">Delete Account</button>
+    <div class="allergy-section">
+      <h2 class="allergy-header" v-if="userAllergies">{{ username }}'s allergies...</h2>
+      <h2 class="allergy-header" v-else>User has no listed allergies</h2>
+      <ul class="allergy-list">
+        <li v-for="(allergy, index) in userAllergies" :key="index">{{ allergy.name }}</li>
+      </ul>
+    </div>
 
+    <br>
 
     <div class="password-reset-section">
       <h3>Reset Your Password</h3>
@@ -134,12 +139,11 @@ const allergyPage = () => {
 
 
   <div v-else>
-    <h1>You are not logged in. Please log in or create an account to continue.</h1>
-    <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
+    <h1 style="font-size: xx-large; text-align: center; padding-top: 2%;">You are not logged in. Please <a href ="/login" style="color: #f55d8b;">log in</a> or <a href ="/create" style="color: #f55d8b;">create an account</a> to continue.</h1>
+    <div v-if="errorMessage" class="error-message" style="text-align: center; font-size: large;">{{ errorMessage }}</div>
   </div>
 
   
- <Card />
 </template>
 
 <style scoped>
@@ -152,13 +156,49 @@ const allergyPage = () => {
   display: flex;
   justify-content: center;
 }
-.allergy-section h2 {
-  font-size: 1.5rem;
-  color: #555;
-  margin-bottom: 10px;
-  display: flex;
-  justify-content: center;
+.allergy-section {
+  border: 3px solid #f55d8b; 
+  border-radius: 8px;        
+  width: max-content;
+  max-width: 90%;          
+  margin: 20px auto;         
+  padding: 20px;           
+  background-color: #f9f9f9;
 }
+.allergy-header {
+  padding: 10px 20px;      
+  font-size: x-large;
+  font-weight: bold;
+  color: #6c6c6c;  
+  margin-bottom: 15px;     
+  text-align: center;        
+  border-radius: 5px;        
+}
+.allergy-list {
+  list-style-type: none;  
+  padding: 0;
+  margin: 0;
+}
+
+.allergy-list li {
+  padding: 10px;
+  background-color: #fff;    
+  border: 1px solid #ddd; 
+  margin-bottom: 10px;        
+  border-radius: 5px;    
+  transition: background-color 0.3s, transform 0.3s;
+}
+
+.allergy-list li:hover {
+  background-color: #2d9f48; 
+  color: white;           
+  transform: translateX(5px); 
+}
+
+.allergy-list li:last-child {
+  margin-bottom: 0;    
+}
+
 .error-message {
   color: red;
   font-weight: bold;
@@ -176,6 +216,10 @@ button {
   cursor: pointer;
   transition: background-color 0.3s ease;
 }
+.button-line {
+  display: flex;
+  justify-content: center;
+}
 button:hover {
   background: darkgreen;
 }
@@ -190,7 +234,76 @@ ul li {
   font-size: 1rem;
   padding: 8px;
   background-color: #fee1ee;
+  width:max-content;
   margin-bottom: 5px;
   border-radius: 4px;
 }
+
+.password-reset-section {
+  background-color: #f7f7f7;    
+  padding: 20px;                 
+  border-radius: 8px;            
+  max-width: 400px;              
+  margin: 20px auto;
+}
+
+.password-reset-section h3 {
+  font-size: 1.25rem;
+  font-weight: bold;
+  color: #333;
+  margin-bottom: 15px;            
+  text-align: center;
+}
+
+.password-input {
+  width: 100%;            
+  padding: 12px;                 
+  margin-bottom: 15px;           
+  border: 1px solid #ddd;      
+  border-radius: 5px;            
+  font-size: 1rem;             
+  background-color: #fff;       
+}
+
+.password-input:focus {
+  outline: none;                
+  border-color: #f55d8b;         
+}
+
+.reset-btn {
+  width: 100%;                   
+  padding: 12px;                
+  font-size: 1rem;               
+  background-color: #f55d8b;
+  color: white;                  
+  border: none;                 
+  border-radius: 5px;            
+  cursor: pointer;               
+  transition: background-color 0.3s; 
+}
+
+.reset-btn:hover {
+  background-color: #f85c9e;  
+}
+
+.password-reset-section .success,
+.password-reset-section .error {
+  padding: 10px;
+  margin-top: 15px;
+  text-align: center;
+  font-size: 1rem;
+  border-radius: 5px;
+  color: white;
+}
+
+.password-reset-section .success {
+  color: #28a745;
+  font-weight: bolder;
+}
+
+.password-reset-section .error {
+  background-color: #dc3545; 
+  font-weight: bolder;
+}
+
 </style>

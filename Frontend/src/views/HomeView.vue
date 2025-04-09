@@ -8,7 +8,7 @@ import HowItWorks from '@/components/HowItWorks.vue';
 <template>
   <Hero/>
   <HomeCards/>
-  <h1>Ready to Eat Well? <a href="/create" style="color:palevioletred"> Start Here.</a></h1>
+  <h1 style="text-align: center; font-size: xx-large">Ready to Eat Well? <a href="/create" style="color:palevioletred"> Start Here.</a></h1>
   <!-- above link is just a placeholder for the actual account creation-->
   <HowItWorks/>
 </template>
