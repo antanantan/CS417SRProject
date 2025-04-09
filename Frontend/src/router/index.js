@@ -38,9 +38,10 @@ const router = createRouter({
       component: LocationView 
     },
     {
-      path: '/menu',
+      path: '/menu/:restaurantId?',
       name: 'Menu',
-      component: MenuFilter 
+      component: MenuFilter,
+      props: false, 
     },
     {
       path: '/order',
@@ -64,5 +65,6 @@ const router = createRouter({
     },
   ],
 })
+
 
 export default router;

@@ -167,6 +167,8 @@ const getAllergenName = (id) => {
   return found ? found.name : 'Unknown';
 };
 
+const isAgreed = ref(false); 
+
 // close modal
 const close = () => {
   emit("update:modelValue", false);
@@ -200,7 +202,7 @@ const close = () => {
           <!-- Applied Allergens Badge List -->
           <div class="overflow-x-auto">
             <div class="flex items-center text-sm text-neutral-700 pb-2 space-x-2 min-w-full whitespace-nowrap">
-              <span class="pr-2">Applied Allergens: </span>
+              <span class="pr-2">Applied allergies: </span>
               <span v-if="userAllergies.length === 0" class="italic text-neutral-400">None</span>
               <template v-else>
                 <div
@@ -217,7 +219,7 @@ const close = () => {
 
           <!-- search bar -->
           <div class="flex items-center bg-white border-1 border-rose-400 rounded-full h-11 w-full mx-auto">
-            <Icon icon="mdi:magnify" class="w-5 h-5 text-rose-400 ml-2" />
+            <Icon icon="mdi:magnify" class="w-5 h-5 text-rose-400 ml-3" />
             <input
               type="text"
               id="allergen-search"
@@ -230,12 +232,12 @@ const close = () => {
               v-if="searchQuery"
               icon="mdi:close"
               @click="clearSearch"
-              class="w-5 h-5 text-rose-400 cursor-pointer mr-2"
+              class="w-5 h-5 text-rose-400 cursor-pointer mr-3"
             />
           </div>
 
           <!-- severity scale -->
-          <div class="relative text-xs pt-4">
+          <div class="relative text-xs pt-2">
             <div class="absolute w-32 right-4 ">
               <span class="absolute -left-[50%] -translate-x-1/2 flex flex-items justify-center text-neutral-400">
                 Severity
@@ -260,8 +262,8 @@ const close = () => {
           </div>
 
           <!-- allergens list -->
-          <div class="my-4 overflow-auto flex-1 ">
-            <div v-for="group in filteredAllergenGroups" :key="group.id" class="py-2">
+          <div class="mt-4 mb-2 overflow-auto flex-1 bg-gradient-to-t from-transparent via-white to-white ">
+            <div v-for="group in filteredAllergenGroups" :key="group.id" class="pb-4">
               <!-- if there is only one item in allergen group -->
               <template v-if="group.allergens.length === 1">
                 <div class="flex items-center pl-7 relative">
@@ -362,9 +364,17 @@ const close = () => {
           </div>
 
           <!-- buttons -->
-          <div class="pt-0 flex justify-end space-x-4">
-            <button @click="resetAllAllergies" class="px-4 py-2 bg-neutral-300 text-neutral-800 rounded-full hover:bg-neutral-400">Reset</button>
-            <button @click="applyAllAllergies" class="px-4 py-2 border-1 border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition">Apply</button>
+          <div class="pt-0">
+            <div class="flex items-center pb-2">
+              <input type="checkbox" id="agree" v-model="isAgreed" class="mr-2 h-4 w-4 text-rose-400 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent" />
+              <label for="agree" class="text-sm text-neutral-700">
+                I agree to terms and conditions.
+              </label>
+            </div>
+            <div class="flex justify-end space-x-4">
+              <button @click="resetAllAllergies" class="px-4 h-11 bg-neutral-300 text-neutral-800 rounded-full hover:bg-neutral-400">Reset</button>
+              <button @click="applyAllAllergies" :disabled="!isAgreed" class="px-4 h-11 border-1 border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition disabled:opacity-50 " :title="!isAgreed ? 'Please agree to continue.' : ''">Apply</button>
+            </div>
           </div>
         </div>
       </div>
@@ -380,7 +390,8 @@ const close = () => {
   border-radius: 9999px;
   cursor: pointer;
   border: none;
-  background-color: #f87171;
+  background-color: #ffffff;
+  box-shadow: 0 0 2px #9FA6AD;
 }
 
 .range-slider:disabled::-webkit-slider-thumb {
@@ -393,7 +404,7 @@ const close = () => {
   border-radius: 9999px;
   cursor: pointer;
   border: none;
-  background-color: #f87171;
+  box-shadow: 0 0 2px #9FA6AD;
 }
 
 .range-slider:disabled::-moz-range-thumb {

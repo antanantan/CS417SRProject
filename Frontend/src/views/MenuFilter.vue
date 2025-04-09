@@ -1,37 +1,59 @@
 <script setup>
 import Card from '@/components/Steps_Bottom.vue';
 import { Icon } from '@iconify/vue';
-import { useRouter } from 'vue-router';
-import { ref, computed, onMounted} from "vue";
+import { useRouter, useRoute } from 'vue-router';
+import { ref, computed, onMounted } from "vue";
 import { api, authApi } from '@/api/auth.js';
 import axios from "axios";
 import { svg } from 'leaflet';
 import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
 
 const router = useRouter();
+const route = useRoute(); // To access route parameters
 
 // make reactive variables for the selected restaurant and menu
 const restaurant = ref({ name: "", address: "", phone: "", category: "", price_range:"", status: "", hours: "{}", image:""});
 const menu = ref([]);
-// const userAllergies = ref([]); 
+const props = defineProps({
+  restaurantId: {
+    type: String,
+    required: false, // ← optional
+  },
+});
 
-// function to fetch menu data from the Flask API
-const fetchMenu = async () => {
+// Function to fetch menu data for the selected restaurant
+const fetchMenu = async (restaurantId) => {
   try {
-    console.log("Fetching menu data from Flask...");
-    const response = await api.get("/menu");
+    console.log(`Fetching menu data for restaurant:`, restaurantId);
+    const response = await api.get("/menu/${restaurantId}");
     console.log("API Response:", response.data);
 
     restaurant.value = response.data.restaurant;
     menu.value = response.data.menu;
   } catch (error) {
     console.error("Error fetching menu:", error);
-  }
-};
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      await router.push("/login");
+    } else {
+      const response = await api.get("/menu/1");
+      console.log("API Response:", response.data);
 
+      restaurant.value = response.data.restaurant;
+      menu.value = response.data.menu;
+    }
+  }
+};  
+
+// When the component is mounted, fetch the restaurant's menu based on the ID from the URL
 onMounted(() => {
-  fetchMenu();
-  // fetchUserAllergies();
+  const restaurantId = route.params.restaurantId; // Get the restaurantId from the URL
+  if (restaurantId) {
+    fetchMenu(restaurantId); // Fetch the menu for the restaurant
+  } else {
+    console.error("No restaurant ID found in the URL");
+    fetchMenu(1);
+  }
 });
 
 // menu filtering by search and user allergies
@@ -93,7 +115,6 @@ const clearSearch = () => {
   searchQuery.value = "";
 };
 
-
 // functions to parse and display restaurant hours
 const hours = ref(null);
 const showHours = ref(false);
@@ -124,8 +145,6 @@ const formattedPhone = computed(() => {
   if (!restaurant.value.phone) return "";
   return restaurant.value.phone.replace(/(\d{3})(\d{3})(\d{4})$/, "($1) $2-$3");
 });
-
-
 
 const selectedItem = ref(null); // selected menu item for modal
 const selectedOptions = ref({});
@@ -192,7 +211,6 @@ const addToOrder = () => {
   });
   closeModal();
 };
-
 
 const onInput = () => {
   console.log("Searching for:", searchQuery.value);
@@ -272,17 +290,17 @@ const proceedToCheckout = () => {
       <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3">
         <!--  Search Box -->
         <div class="flex items-center !bg-white border-1 border-green-700 rounded-full h-11 flex-grow w-full ">
-          <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-2 flex-shrink-0" />
+          <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-3 flex-shrink-0" />
           <input type="text" id="menu-search" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 w-full" />
           <span v-if="searchQuery && filteredMenu.length" class="mr-2 text-green-700 ">{{ searchIndex + 1 }}/{{ filteredMenu?.length || 0 }}</span>
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-up" @click="searchPrev" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-down" @click="searchNext" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
-          <Icon v-if="searchQuery" icon="mdi:close" @click="clearSearch" class="w-5 h-5 text-green-700 mr-2 cursor-pointer flex-shrink-0" />
+          <Icon v-if="searchQuery" icon="mdi:close" @click="clearSearch" class="w-5 h-5 text-green-700 mr-3 cursor-pointer flex-shrink-0" />
         </div>
 
         <!-- Allergy Filter ON/OFF Button-->
         <button @click="toggleAllergyFilter" class="flex items-center justify-center md:justify-start h-11 w-11 md:w-48 rounded-full border-1 flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
-          <Icon icon="mdi:food-allergy" class="w-5 h-5 m-2 flex-shrink-0" />
+          <Icon icon="mdi:food-allergy" class="w-5 h-5 ml-3 mr-2 flex-shrink-0" />
           <span class="hidden md:block">Allergy Filter: {{ allergyFilterOn ? 'ON' : 'OFF' }}</span>
         </button>
       </div>
