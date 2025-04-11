@@ -1,5 +1,4 @@
 <script setup>
-import Card from '@/components/Steps_Bottom.vue';
 import {useRouter} from "vue-router";
 import Modal from "@/components/Disclaimer.vue"
 import { api, authApi } from '@/api/auth.js';
@@ -172,13 +171,43 @@ const searchPrev = () => {
       </tbody>
     </table>
   </div>
+  <div class="navigation-controls">
+    <button class="nav-button save-button" @click="saveAllergies">
+      Save Allergies
+    </button>
+  </div>
 
-  <Card></Card>
+
 </template>
  
 
 
 <style scoped>
+.navigation-controls{
+  display: flex;
+  justify-content: center;
+  padding: 20px;
+  margin-top: 20px;
+  margin-bottom: 60px;
+}
+
+.nav-button{
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+.next-button {
+  background-color: #db79cf;
+  color: white;
+  border: 1px solid #bb4da5;
+}
+
+.next-button:hover {
+  background-color: #bb4da5;
+}
+
 .allergy-container {
   padding: 20px;
   padding-bottom: 100px;
@@ -202,5 +231,14 @@ const searchPrev = () => {
 }
 .highlighted {
   background-color: yellow;
+}
+.save-button {
+  background-color: #4CAF50;
+  color: white;
+  border: 1px solid #388e3c;
+}
+
+.save-button:hover {
+  background-color: #388e3c;
 }
 </style>

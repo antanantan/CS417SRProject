@@ -1,5 +1,4 @@
 <script setup>
-import Card from '@/components/Steps_Bottom.vue';
 import { Icon } from '@iconify/vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, computed, onMounted } from "vue";
@@ -10,6 +9,10 @@ import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergie
 
 const router = useRouter();
 const route = useRoute(); // To access route parameters
+
+const goBackToLocation = () => {
+  router.push({ name: 'Location' });
+};
 
 // make reactive variables for the selected restaurant and menu
 const restaurant = ref({ name: "", address: "", phone: "", category: "", price_range:"", status: "", hours: "{}", image:""});
@@ -25,7 +28,7 @@ const props = defineProps({
 const fetchMenu = async (restaurantId) => {
   try {
     console.log(`Fetching menu data for restaurant:`, restaurantId);
-    const response = await api.get("/menu/${restaurantId}");
+    const response = await api.get(`/menu/${restaurantId}`);
     console.log("API Response:", response.data);
 
     restaurant.value = response.data.restaurant;
@@ -227,6 +230,12 @@ const proceedToCheckout = () => {
     <!-- Left Column (hidden in phone screen) -->
     <div class="w-full md:w-1/3 lg:w-1/4">
       <div class="bg-white rounded-xl shadow-md m-3 overflow-hidden">
+        <div class="back-button-container px-3 pt-3">
+          <button @click="goBackToLocation" class="flex items-center text-green-700 hover:text-green-900">
+            <Icon icon="mdi:arrow-left" class="w-5 h-5 mr-1" />
+            <span>Back to Restaurants</span>
+          </button>
+        </div>
         <img v-if="restaurant.image" :src="restaurant.image" alt="Restaurant Image" class="w-full h-40 object-cover" />
         <div class="p-3 text-green-700">
           <h1  class="text-lg font-bold">{{ restaurant.name }}</h1>
@@ -445,5 +454,5 @@ const proceedToCheckout = () => {
       </div>
     </div>
   </div>
-  <Card></Card>
+
 </template>

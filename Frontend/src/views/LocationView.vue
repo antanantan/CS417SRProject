@@ -1,6 +1,3 @@
-<script setup>
-import Card from '@/components/Steps_Bottom.vue';
-</script>
 
 <template>
   <h1>Step 2: Select Location</h1>
@@ -21,12 +18,11 @@ import Card from '@/components/Steps_Bottom.vue';
 <div v-if="selectedMarker" style="text-align: center; font-size: x-large;">
   <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
   <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
-  <button @click="confirmSelection" :disabled="!selectedMarker">Confirm Selection</button>
+  <button @click="confirmSelection" :disabled="!selectedMarker" class="nav-button next-button">> Confirm Selection </button>
 </div>
 <div v-else>
   <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
 </div>
-  <Card></Card>
 </template>
 
 <script>
@@ -64,7 +60,8 @@ export default {
       }
 
       try {
-        const response = await fetch('http://localhost:5000/location', {method: 'POST', headers:{'Content-Type': 'application/json'}, body: JSON.stringify({ zip_code: this.zip_entered }),});
+        this.errorMessage = null; // resets error messages
+        const response = await fetch('/api/location', {method: 'POST', headers:{'Content-Type': 'application/json'}, body: JSON.stringify({ zip_code: this.zip_entered }),});
         const data = await response.json();
 
         if (response.ok && data && data.length > 0) {
@@ -106,7 +103,7 @@ export default {
 
     async handleMarkerSelection(markerData) {
       try {
-        const response = await fetch('http://localhost:5000/location_select', {
+        const response = await fetch('/api/location_select', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(markerData),
@@ -130,7 +127,7 @@ export default {
 
     async fetchMenuForRestaurant(restaurantId) {
       try {
-        const response = await fetch(`http://localhost:5000/menu/${restaurantId}`, {
+        const response = await fetch(`/api/${restaurantId}`, {
           method: 'GET',
         });
 
@@ -155,7 +152,7 @@ export default {
   },
 
   mounted() {
-    fetch('/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}})
+    fetch('/api/location_select', {method: 'POST', headers: {'Content-Type': 'application/json',}, body: JSON.stringify({ defaultRequest: true})})
       .then((response) => response.json())
       .then((data) => {
         if (data.status === 'success') {
@@ -171,6 +168,31 @@ export default {
 </script>
 
 <style scoped>
+.nav-button {
+  padding: 12px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 10px;
+}
+
+.next-button {
+  background-color: #db79cf;
+  color: white;
+  border: 1px solid #bb4da5;
+}
+
+.next-button:hover {
+  background-color: #bb4da5;
+}
+
+.next-button:disabled {
+  background-color: #cccccc;
+  border-color: #bbbbbb;
+  cursor: not-allowed;
+}
+
 h1 {
   font-size: xx-large;
   text-align: center;

@@ -104,11 +104,20 @@ const handleLogout = async () => {
 // convert guest account to a regular account
 const convertToAccount = async () => {
   try {
-    // Get current guest token to link allergy data
-    router.push('/create');
+    // store route to return after account verification
+    const currentPath = router.currentRoute.value.path;
+    localStorage.setItem('returnPath', currentPath);
+    localStorage.setItem('convertingFromGuest', 'true');
+
+    //get curr allergies to transfer 
+    await fetchUserAllergies().catch(err => {
+      console.error('Unable to fetch user allergies:', err);
+    });
+
+    await router.push('/create');
   } catch (err) {
-    console.error('Unable to prepare for account conversion:', err);
-    errorMessage.value = "Unable to prepare for account conversion";
+  console.error('Unable to prepare for account conversion:', err);
+  errorMessage.value = "Unable to prepare for account conversion";
   }
 };
 

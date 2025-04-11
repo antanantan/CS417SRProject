@@ -3,7 +3,6 @@ import axios from 'axios';
 import {ref, onMounted} from 'vue';
 import { api, authApi } from '@/api/auth.js';
 import { useRouter } from 'vue-router';
-import Card from '@/components/Steps_Bottom.vue';
 import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
 
 const username = ref('');
