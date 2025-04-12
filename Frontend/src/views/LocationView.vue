@@ -13,10 +13,11 @@
   <div ref="map_container" style="height: 100%; width: 100%;"></div>
 </div>
 
-<div v-if="selectedMarker" style="text-align: center; font-size: x-large;">
-  <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
-  <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
-  <button @click="confirmSelection" :disabled="!selectedMarker" class="nav-button next-button">> Confirm Selection </button>
+<div v-if="selectedMarker" style="margin-left: 10%; margin-right: 10%; font-size: x-large;">
+  <div class="text" style="display: flex; align-items: center; justify-content: space-between; gap: 20px;">
+    <p><strong>Name:</strong> {{ selectedMarker.name }}</p>
+    <p><strong>Address:</strong> {{ selectedMarker.address }}</p>
+  <button @click="confirmSelection" :disabled="!selectedMarker" class="nav-button next-button">> Confirm Selection </button></div>
 </div>
 <div v-else>
   <p style="text-align: center; font-size: x-large;">No marker selected yet.</p>
