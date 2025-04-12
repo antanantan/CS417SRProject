@@ -1,17 +1,35 @@
 <script setup>
-import {computed, ref, watch, onMounted} from 'vue';
+import {computed, ref, watch, onMounted, onBeforeUnmount} from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { Icon } from '@iconify/vue';
 
 const route = useRoute();
 const router = useRouter();
 const isNavigating = ref(false);
+let navigationTimeoutId = null;
 
 const orderState = ref({
     allergiesSelected: false,
     restaurantSelected: false,
     itemsInCart: false
 })
+
+/**
+ * Reset navigation state and clear any timeouts
+ * Centralizing this logic prevents race conditions
+ */
+const resetNavigationState = () => {
+    isNavigating.value = false;
+    if (navigationTimeoutId) {
+        clearTimeout(navigationTimeoutId);
+        navigationTimeoutId = null;
+    }
+};
+
+// Clean up event listeners and timeouts when component is unmounted
+onBeforeUnmount(() => {
+    resetNavigationState();
+});
 
 // Checks the localstorage for persisted state
 onMounted(() => {
@@ -28,10 +46,28 @@ onMounted(() => {
     
     // Initialize based on current route
     updateStateFromRoute(route.path);
+
+    // Reset navigation state when component mounts
+    resetNavigationState();
 });
 
-// Updates orderState when the route changes
+/**
+ * Updates orderState when the route changes
+ * Handles resetting states appropriately when going backward
+ */
 const updateStateFromRoute = (path) => {
+    if (!path) return; // Guard against empty paths
+    
+    const currentIndex = activeTabIndex(path)
+    
+    // Reset state for steps ahead of current step 
+    if (currentIndex < 1) {
+        orderState.value.restaurantSelected = false;
+        orderState.value.itemsInCart = false;
+    } else if (currentIndex < 2) {
+        orderState.value.itemsInCart = false;
+    }
+    
     // If on allergies page or beyond, mark allergies as selected
     if (path.includes('/location') || path.includes('/menu') || path.includes('/order')) {
         orderState.value.allergiesSelected = true;
@@ -47,7 +83,12 @@ const updateStateFromRoute = (path) => {
         orderState.value.itemsInCart = true;
     }
     
-    localStorage.setItem('orderState', JSON.stringify(orderState.value));
+    // Safely persist to localStorage
+    try {
+        localStorage.setItem('orderState', JSON.stringify(orderState.value));
+    } catch (e) {
+        console.error('Failed to save order state:', e);
+    }
 };
 
 // Function to check if a step is completed
@@ -65,16 +106,21 @@ const routes = [
     {name: 'Order', path: '/order', icon: 'mdi:cart-outline' }, 
 ];
 
-// tab value
+// Active tab tracking
 const activeTab = ref(0);
 
-// gets index of tab based on current path
+/**
+ * Gets index of tab based on current path
+ * Optimized for performance with error handling
+ */
 const activeTabIndex = (currentPath) => {
     try {
-        // Handle the routes with params like /menu/{restaurantId}
+        if (!currentPath) return 0;
+        
+        // Handle routes with params like /menu/{restaurantId}
         const basePath = '/' + currentPath.split('/')[1];
         
-        // find matching route
+        // Find matching route
         const index = routes.findIndex(r => 
             r.path === basePath || basePath.startsWith(r.path)
         );
@@ -103,16 +149,20 @@ const isDisabled = computed(() => {
 // Update active tab when route changes
 watch(() => route.path, (newPath) => {
     activeTab.value = activeTabIndex(newPath);
-    // Also update state based on current route
     updateStateFromRoute(newPath);
 }, { immediate: true });
 
-// Also watch for matched routes (handles nested routes)
+// Update active tab when route changes for nested routes
 watch(() => route.matched, () => {
     activeTab.value = activeTabIndex(route.path);
 }, { deep: true });
 
-// Navigation function - optimized for single-click response
+/**
+ * Enhanced navigation function with proper safeguards
+ * - Uses single-source-of-truth for navigation state
+ * - Implements proper cleanup
+ * - Handles edge cases and errors
+ */
 const navigate = async (tabIndex, event) => {
     // Prevent any default browser behaviors
     if (event) {
@@ -130,10 +180,34 @@ const navigate = async (tabIndex, event) => {
     isNavigating.value = true;
     
     try {
-        // Don't navigate if already on correct route
+        // Get target route
+        const targetRoute = routes[tabIndex].path;
+        
+        // When clicking the current tab, refresh the route instead of navigating
         if (activeTab.value === tabIndex) {
-            console.log('Already on this tab, no navigation needed');
-            isNavigating.value = false;
+            console.log('Refreshing current route:', targetRoute);
+            
+            // Special case for menu route with restaurant ID
+            if (targetRoute === '/menu' && route.path.startsWith('/menu')) {
+                const restaurantId = route.params.restaurantId;
+                if (restaurantId) {
+                    await router.replace({ 
+                        path: `/menu/${restaurantId}`, 
+                        force: true 
+                    });
+                    updateStateFromRoute(`/menu/${restaurantId}`);
+                    resetNavigationState();
+                    return;
+                }
+            }
+            
+            // Regular refresh for other routes
+            await router.replace({ 
+                path: targetRoute, 
+                force: true 
+            });
+            updateStateFromRoute(targetRoute);
+            resetNavigationState();
             return;
         }
         
@@ -141,24 +215,21 @@ const navigate = async (tabIndex, event) => {
         if (tabIndex > activeTab.value) {
             if (tabIndex === 1 && !orderState.value.allergiesSelected) {
                 alert('Please save your allergies first');
-                isNavigating.value = false;
+                resetNavigationState(); // Use resetNavigationState instead of just setting isNavigating
                 return;
             } 
             else if (tabIndex === 2 && !orderState.value.restaurantSelected) {
                 alert('Please select a restaurant first');
-                isNavigating.value = false;
+                resetNavigationState();
                 return;
             }
             else if (tabIndex === 3 && !orderState.value.itemsInCart) {
                 alert('Please add items to your cart first');
-                isNavigating.value = false;
+                resetNavigationState();
                 return;
             }
         }
 
-        // Get target route
-        const targetRoute = routes[tabIndex].path;
-        
         // Special case for menu route with restaurant ID
         if (targetRoute === '/menu' && route.path.startsWith('/menu')) {
             // Extract restaurant ID from current path
@@ -166,6 +237,8 @@ const navigate = async (tabIndex, event) => {
             if (restaurantId) {
                 console.log(`Navigating to menu with restaurant ID: ${restaurantId}`);
                 await router.push(`/menu/${restaurantId}`);
+                updateStateFromRoute(`/menu/${restaurantId}`);
+                resetNavigationState();
                 return;
             }
         } 
@@ -173,54 +246,32 @@ const navigate = async (tabIndex, event) => {
         // Regular navigation
         console.log(`Navigating to: ${targetRoute}`);
         await router.push(targetRoute);
+        updateStateFromRoute(targetRoute);
+        resetNavigationState();
     } catch (error) {
         console.error('Error navigating to tab:', error);
-    } finally {
-        // Reset navigation state after a short delay
-        // Use shorter delay to improve responsiveness
-        setTimeout(() => {
-            isNavigating.value = false;
-        }, 200); 
+        resetNavigationState();
     }
 };
-
-// Calculate progress for progress bar
-const progressPercentage = computed(() => {
-    return (activeTab.value / (routes.length - 1)) * 100;
-});
-
-const completedSteps = computed(() => {
-    return activeTab.value + 1; // Current Step
-});
-
-const totalSteps = computed(() => routes.length);
-
 </script>
 
 <template>
     <div class="navigation-container">
-        <div class="progress-bar">
-            <div 
-                class="progress-fill" 
-                :style="{ width: `${progressPercentage}%` }"
-            ></div>
-        </div>
-        
         <v-bottom-navigation 
             v-model="activeTab" 
             color="primary" 
             grow 
             class="order-bottom-nav" 
             fixed
-            user-select="none"
         >
             <v-btn 
                 v-for="(item, index) in routes" 
                 :key="item.path"
                 @click="(e) => navigate(index, e)"
-                :disabled="isDisabled[index]"
+                :disabled="isDisabled[index] || isNavigating"
                 :value="index"
                 class="nav-btn"
+                v-bind="{ 'data-state': isNavigating ? 'navigating' : 'idle' }"
             >   
                 <Icon :icon="item.icon" width="24" height="24" />
                 <span>{{ item.name }}</span>
@@ -235,7 +286,6 @@ const totalSteps = computed(() => routes.length);
         </v-bottom-navigation>
     </div>
 </template>
-
 
 <style scoped>
 .navigation-container {
@@ -257,27 +307,13 @@ const totalSteps = computed(() => routes.length);
   right: 8px;
 }
 
-.progress-bar {
-  width: 100%;
-  height: 4px;
-  background-color: #e0e0e0;
-}
-
-.progress-fill {
-  height: 100%;
-  background-color: #db79cf; 
-  transition: width 0.3s ease;
-}
-
 .order-bottom-nav {
   box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
 }
 
-
 .v-btn :deep(.v-btn__content) {
   flex-direction: column;
 }
-
 
 .nav-btn {
   cursor: pointer;
@@ -285,7 +321,14 @@ const totalSteps = computed(() => routes.length);
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
-  touch-action: manipulation;
+  transition: transform 0.1s ease;
+}
+
+.nav-btn:active {
+  transform: scale(0.95);
+}
+.nav-btn[data-state="navigating"] {
+  opacity: 0.7;
 }
 
 @media (max-width: 600px) {

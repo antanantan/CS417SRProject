@@ -4,7 +4,7 @@
   <br>
   <form @submit.prevent="generateMap" style="display: flex; justify-content: center;">
       <label for="zip" style="font-size:large;">ZIP/Postal Code:  </label>
-      <input type="text" v-model="zip_entered" id="zip" name="zip" style="border-width: 5px; border-color: #48ab4e; border-radius:10%" required/>
+      <input type="text" v-model="zip_entered" id="zip" name="zip" style="border-width: 5px; border: solid #48ab4e; border-radius:10%" required/>
       <button type="submit">Submit</button>
     </form>
   <br>
