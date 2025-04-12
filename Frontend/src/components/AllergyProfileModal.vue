@@ -2,12 +2,15 @@
 import { ref, onUpdated, computed, onMounted, watch } from "vue";
 import { Icon } from "@iconify/vue";
 import { api, authApi } from "@/api/auth.js";
+import { useRouter, useRoute } from "vue-router";
 import { userAllergies, fetchUserAllergies, applyUserAllergySelections } from '@/composables/useUserAllergies.js';
 
 // get 'v-model'
 const props = defineProps(["modelValue"]);
 const emit = defineEmits(['update:modelValue', 'updated']);
 
+const router = useRouter();
+const route = useRoute();
 
 // allergen data
 const allergenGroups = ref([]);
@@ -67,11 +70,11 @@ const filteredAllergenGroups = computed(() => {
 
       return {
         ...group,
-        allergens: allGroupItems,           // ← 全て保持
-        filteredAllergens: matchingItems,   // ← 表示用に追加
+        allergens: allGroupItems, // keep all items in the group
+        filteredAllergens: matchingItems, // only for matching items
       };
     })
-    .filter(group => group.filteredAllergens.length > 0); // ← 少なくとも1件マッチ
+    .filter(group => group.filteredAllergens.length > 0); // at least one item matches
 });
 
 // clear search input
@@ -169,6 +172,11 @@ const getAllergenName = (id) => {
 
 const isAgreed = ref(false); 
 
+const goToAllergyPage = () => {
+  close();
+  router.push("/allergy_list");
+};
+
 // close modal
 const close = () => {
   emit("update:modelValue", false);
@@ -190,6 +198,16 @@ const close = () => {
         class="w-screen max-w-md bg-white shadow-xl transition-transform duration-700 ease-in-out transform"
         :class="{ 'translate-x-0': modelValue, 'translate-x-full': !modelValue }"
       >
+
+      <!-- open in full page button -->
+      <button
+        @click="goToAllergyPage"
+        class="absolute -left-5 bottom-6 p-2 flex items-center justify-center rounded-full text-rose-600 bg-white shadow-md border-none hover:bg-neutral-200 transition"
+        title="Open in full page"
+      >
+        <Icon icon="mdi:keyboard-arrow-left" class="w-6 h-6"/>
+      </button>
+      
         <div class="h-full flex flex-col py-6 px-6">
           <!-- modal header -->
           <div class="flex justify-between items-center pb-2">
@@ -368,7 +386,7 @@ const close = () => {
             <div class="flex items-center pb-2">
               <input type="checkbox" id="agree" v-model="isAgreed" class="mr-2 h-4 w-4 text-rose-400 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent" />
               <label for="agree" class="text-sm text-neutral-700">
-                I agree to terms and conditions.
+                I agree to the terms of the disclaimer.
               </label>
             </div>
             <div class="flex justify-end space-x-4">
