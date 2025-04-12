@@ -4,12 +4,10 @@
   <br>
   <form @submit.prevent="generateMap" style="display: flex; justify-content: center;">
       <label for="zip" style="font-size:large;">ZIP/Postal Code:  </label>
-      <input type="text" v-model="zip_entered" id="zip" name="zip" style="border-width: 5px; border: solid #48ab4e; border-radius:10%" required/>
-      <button type="submit">Submit</button>
+      <input class="zip_input" type="text" v-model="zip_entered" id="zip" name="zip" style="height: 35px; border-width: 5px; border: solid #48ab4e; border-radius:5%; border-width: 50px; margin-bottom: 2%;" required/>
+      <button type="submit" style="margin-bottom: 2%;">Submit</button>
     </form>
-  <br>
   <div v-if="errorMessage" class="error-message">{{ errorMessage }}</div>
-  <br>
 
 <div class="map_wrapper">
   <div ref="map_container" style="height: 100%; width: 100%;"></div>
@@ -199,11 +197,11 @@ h1 {
   padding-top: 2%;
 }
 button {
-  border-width: 5px; 
+  border-width: 20px; 
   border-color: darkgreen; 
   color:white;
   border-radius: 10%;
-  background-color: chartreuse;
+  background-color: rgb(120, 182, 58);
 }
 button:hover {
   color: darkgreen;
@@ -214,8 +212,8 @@ button:hover {
   border-width: 1rem; 
   border-radius: 5%;
   border-color: #f27e9f; 
-  width: 800px;
-  height: 550px;
+  width: 700px;
+  height: 450px;
   overflow: hidden;
   align-items: center;
 }

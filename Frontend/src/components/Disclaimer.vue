@@ -13,7 +13,7 @@
           we know that in every restaurant and dining establishment,
           there is always the risk of cross-contamination. While the 
           goal of this application is to reduce the risk of direct contact
-          with allergens and the hassle for the sake of the cusomer and the 
+          with allergens and the hassle for the sake of the customer and the 
           establishment, the risk is never completely eradicated.
         </slot>
        </section>
