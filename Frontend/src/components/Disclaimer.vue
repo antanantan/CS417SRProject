@@ -62,7 +62,7 @@ const close = (closeandNavigate) => {
   }
 
   .modal {
-    background: #FFFFFF;
+    background: #F8F8FF;
     box-shadow: 2px 2px 20px 1px;
     display: flex;
     flex-direction: column;

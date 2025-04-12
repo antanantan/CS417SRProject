@@ -273,8 +273,7 @@ const close = () => {
                       :id="`allergen-${group.allergens[0].id}`"
                       :name="`allergen-${group.allergens[0].id}`"
                       v-model="group.allergens[0].selected"
-                      @change="toggleAllergen(group.allergens[0]) && (group.allergens[0].scale = 2)"
-                      class="mr-2 h-4 w-4 text-rose-400 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent"
+                      @change="toggleAllergen(group.allergens[0]) && (group.allergens[0].scale = 2)" class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose"
                     />
                     {{ group.name }}
                   </label>
@@ -313,7 +312,7 @@ const close = () => {
                     :id="`group-select-${group.id}`"
                     :checked="group.allergens.every(a => a.selected)"
                     @click.stop="toggleGroupSelection(group.id, !group.allergens.every(a => a.selected))"
-                    class="mr-2 h-4 w-4 text-rose-400 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent"
+                    class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose"
                   />
                   <label class="text-md font-bold text-neutral-800 py-1">
                     {{ group.name }}
@@ -344,7 +343,7 @@ const close = () => {
                         :name="`allergen-${allergen.id}`"
                         v-model="allergen.selected"
                         @change="toggleAllergen(allergen) && (allergen.scale = 2)"
-                        class="mr-2 h-4 w-4 text-rose-400 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent"
+                        class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose"
                       />
                       {{ allergen.name }}
                     </label>
@@ -366,7 +365,7 @@ const close = () => {
           <!-- buttons -->
           <div class="pt-0">
             <div class="flex items-center pb-2">
-              <input type="checkbox" id="agree" v-model="isAgreed" class="mr-2 h-4 w-4 text-rose-400 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent" />
+              <input type="checkbox" id="agree" v-model="isAgreed" class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose" />
               <label for="agree" class="text-sm text-neutral-700">
                 I agree to terms and conditions.
               </label>
@@ -382,32 +381,3 @@ const close = () => {
   </div>
 </template>
 
-<style>
-.range-slider::-webkit-slider-thumb {
-  appearance: none;
-  height: 1rem;
-  width: 1rem;
-  border-radius: 9999px;
-  cursor: pointer;
-  border: none;
-  background-color: #ffffff;
-  box-shadow: 0 0 2px #9FA6AD;
-}
-
-.range-slider:disabled::-webkit-slider-thumb {
-  background-color: #d4d4d4; /* neutral-300 */
-}
-
-.range-slider::-moz-range-thumb {
-  height: 1rem;
-  width: 1rem;
-  border-radius: 9999px;
-  cursor: pointer;
-  border: none;
-  box-shadow: 0 0 2px #9FA6AD;
-}
-
-.range-slider:disabled::-moz-range-thumb {
-  background-color: #d4d4d4;
-}
-</style>

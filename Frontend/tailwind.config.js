@@ -13,7 +13,8 @@ export default {
   },
   plugins: [
     require('@tailwindcss/forms')({
-      strategy: 'base',
+      strategy: 'class', 
     }),
   ],
+  important: true, 
 };

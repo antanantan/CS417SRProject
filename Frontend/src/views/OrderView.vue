@@ -111,7 +111,7 @@ h1 {
   padding: 2%;
 }
 .payment-section {
-  background-color: #ffffff;
+  background-color: #F8F8FF;
   padding: 20px;
   border-radius: 8px;
 }

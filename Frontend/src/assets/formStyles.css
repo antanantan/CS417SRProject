@@ -1,0 +1,220 @@
+/* form elements */
+.v-application input[type="text"],
+.v-application input[type="email"],
+.v-application input[type="password"],
+.v-application input[type="number"],
+.v-application input[type="search"],
+.v-application textarea,
+.v-application select {
+  border: 1px solid #d1d5db;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  background-color: #F8F8FF;
+  outline: none;
+}
+
+/* 
+ * allergen checkboxes
+ * needed more specificity for it to not be overwritten
+ */
+.v-application input[type="checkbox"],
+#agree,
+[id^="allergen-"],
+[id^="group-select-"],
+.checkbox-rose {
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  width: 1rem !important;
+  height: 1rem !important;
+  position: relative !important;
+  border: 1px solid #d1d5db !important;
+  background-color: #F8F8FF !important;
+  border-radius: 0.25rem !important;
+  cursor: pointer !important;
+}
+
+/* Styling for checked checkboxes */
+ .v-application input[type="checkbox"]:checked,
+ #agree:checked,
+ [id^="allergen-"]:checked,
+ [id^="group-select-"]:checked,
+ .checkbox-rose:checked {
+  position: relative !important;
+  background-color: #fb7185 !important; 
+  border-color: #fb7185 !important;
+  color: white !important;
+}
+
+/* Add checkmark for checked boxes */
+ .v-application input[type="checkbox"]:checked::after,
+ #agree:checked::after,
+ [id^="allergen-"]:checked::after,
+ [id^="group-select-"]:checked::after,
+ .checkbox-rose:checked::after {
+  content: '✓' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  color: white !important;
+  font-size: 0.85rem !important;
+  font-weight: bold !important;
+  line-height: 1 !important;
+}
+
+/* Fix for menu search boxes having a faint outline */
+input#menu-search,
+input#allergen-search {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+  background-color: transparent !important;
+  line-height: 1.5 !important;
+  padding-bottom: 2px !important;
+  min-height: 24px !important;
+}
+
+/* Fix for search-containing divs, ensure proper styling */
+.flex.items-center.border-1.border-green-700.rounded-full,
+.flex.items-center.border-1.border-rose-400.rounded-full {
+  border-width: 1px !important;
+  overflow: hidden !important;
+  padding: 0.25rem 0.75rem !important;
+  min-height: 2rem !important; 
+}
+
+/* LocationView zip input */
+input[id="zip"].zip_input,
+.v-application input[id="zip"].zip_input {
+  border: 2px solid #48ab4e;
+  border-radius: 0.25rem;
+  padding: 0.5rem;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  height: 35px;
+}
+
+/* MenuFilter "Proceed to checkout" button */
+.border-1.border-green-700 {
+  border: 1px solid #166534;
+}
+
+
+/* Remove any search focus rings or outlines */
+input#menu-search:focus,
+input#allergen-search:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+
+/* range slider styling */
+ .range-slider {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 16px; 
+  background: linear-gradient(to right, #dcfce7, #fef9c3, #fee2e2);
+  border-radius: 9999px;
+  cursor: pointer;
+}
+
+
+ .range-slider::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: none;
+  background-color: #F8F8FF;
+  box-shadow: 0 0 2px #9FA6AD;
+  margin-top: 0; 
+}
+
+
+ .range-slider::-moz-range-thumb {
+  height: 16px;
+  width: 16px;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: none;
+  background-color: #F8F8FF;
+  box-shadow: 0 0 2px #9FA6AD;
+}
+
+.bg-gradient-to-r.from-green-100.via-yellow-100.to-red-100 {
+  background: linear-gradient(to right, #dcfce7, #fef9c3, #fee2e2) !important;
+}
+
+/* Disabled range slider styling */
+.range-slider:disabled {
+  opacity: 0.7 !important;
+  cursor: not-allowed !important;
+}
+
+.range-slider:disabled::-webkit-slider-thumb {
+  background-color: #d4d4d4 !important;
+}
+
+.range-slider:disabled::-moz-range-thumb {
+  background-color: #d4d4d4 !important;
+}
+
+
+.v-application input[type="checkbox"]:hover,
+.v-application input[type="radio"]:hover,
+#agree:hover,
+[id^="allergen-"]:hover,
+[id^="group-select-"]:hover {
+  border-color: #9ca3af;
+}
+
+/* Ensure radio buttons display properly */
+.v-application input[type="radio"] {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid #d1d5db;
+  background-color: #F8F8FF;
+  border-radius: 50%;
+  position: relative;
+  cursor: pointer;
+
+}
+
+ .v-application input[type="radio"]:checked,
+ [id^="radio-"]:checked {
+  position: relative !important;
+  background-color: #fb7185 !important; 
+  border-color: #fb7185 !important;
+  color: white !important;
+}
+
+/* dot for radio buttons when checked */
+ .v-application input[type="radio"]:checked::after,
+ [id^="radio-"]:checked::after {
+  content: '' !important;
+  position: absolute !important;
+  top: 50% !important;
+  left: 50% !important;
+  transform: translate(-50%, -50%) !important;
+  width: 0.5rem !important;
+  height: 0.5rem !important;
+  background-color: white !important;
+  border-radius: 50% !important;
+}
+
+/* Hover state for radio buttons */
+.v-application input[type="radio"]:hover,
+[id^="radio-"]:hover {
+  border-color: #9ca3af !important;
+}
+
+/* Focus state for radio buttons */
+.v-application input[type="radio"]:focus-visible,
+[id^="radio-"]:focus-visible {
+  outline: 2px solid #fb7185 !important;
+  outline-offset: 2px !important;
+}
