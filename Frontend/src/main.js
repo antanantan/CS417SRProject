@@ -4,7 +4,7 @@ import 'bootstrap/dist/js/bootstrap.bundle.min.js';
 import 'devextreme/dist/css/dx.light.css';
 import 'vuetify/styles'
 import './assets/main.css'
-import './assets/formStyles.css'
+// import './assets/formStyles.css'
 
 import { createApp } from 'vue'
 import App from './App.vue'

@@ -215,7 +215,7 @@ const continueAsGuest = async () => {
               <Icon icon='mdi:food-allergy' class="w-7 h-7 group-hover:text-green-700 m-2"></Icon>
             </button>
 
-            <RouterLink v-if="!isLoading" to="/allergy_list" class="group rounded-full bg-green-700 text-white hover:bg-white mr-10">
+            <RouterLink v-if="!isLoading" to="/order" class="group rounded-full bg-green-700 text-white hover:bg-white mr-10">
               <Icon icon='mdi:cart' class="w-7 h-7 group-hover:text-green-700 m-2"></Icon>
             </RouterLink>
           </div>

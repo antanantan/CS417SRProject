@@ -230,7 +230,7 @@ const proceedToCheckout = () => {
     <!-- Left Column (hidden in phone screen) -->
     <div class="w-full md:w-1/3 lg:w-1/4">
       <div class="bg-white rounded-xl shadow-md m-3 overflow-hidden">
-        <div class="back-button-container px-3 pt-3">
+        <div class="p-3">
           <button @click="goBackToLocation" class="flex items-center text-green-700 hover:text-green-900">
             <Icon icon="mdi:arrow-left" class="w-5 h-5 mr-1" />
             <span>Back to Restaurants</span>
@@ -298,9 +298,9 @@ const proceedToCheckout = () => {
       <!-- Search & Allergy Filter Container -->
       <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3">
         <!--  Search Box -->
-        <div class="flex items-center !bg-white border-1 border-green-700 rounded-full h-11 flex-grow w-full ">
+        <div class="flex items-center !bg-white border border-green-700 rounded-full h-11 flex-grow w-full ">
           <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-3 flex-shrink-0" />
-          <input type="text" id="menu-search" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 w-full" />
+          <input type="text" id="menu-search" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 w-full p-2" />
           <span v-if="searchQuery && filteredMenu.length" class="mr-2 text-green-700 ">{{ searchIndex + 1 }}/{{ filteredMenu?.length || 0 }}</span>
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-up" @click="searchPrev" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-down" @click="searchNext" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
@@ -308,7 +308,7 @@ const proceedToCheckout = () => {
         </div>
 
         <!-- Allergy Filter ON/OFF Button-->
-        <button @click="toggleAllergyFilter" class="flex items-center justify-center md:justify-start h-11 w-11 md:w-48 rounded-full border-1 flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
+        <button @click="toggleAllergyFilter" class="flex items-center justify-center md:justify-start h-11 w-11 md:w-48 rounded-full border flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
           <Icon icon="mdi:food-allergy" class="w-5 h-5 ml-3 mr-2 flex-shrink-0" />
           <span class="hidden md:block">Allergy Filter: {{ allergyFilterOn ? 'ON' : 'OFF' }}</span>
         </button>
@@ -404,29 +404,35 @@ const proceedToCheckout = () => {
               <span v-if="group.min_quantity==group.max_quantity" class="text-sm text-neutral-500"> (Required)</span>
               <span v-else-if="group.max_quantity > 0" class="text-sm text-neutral-500"> (Optional: Choose up to {{ group.max_quantity }})</span>
               <ul class="mt-2 space-y-2">
-                <li v-for="option in group.items" :key="option.id" class="flex items-center space-x-2">
+                <li v-for="option in group.items" :key="option.id" class="flex items-start space-x-2">
                   <!-- Radio if max_quantity == 1, else checkbox -->
-                  <input
-                    :type="group.min_quantity >= 1 && group.max_quantity === 1 ? 'radio' : 'checkbox'"
-                    :id="'option-' + option.id"
-                    :name="'group-' + groupId"
-                    :value="option.id"
-                    v-model="selectedOptions[groupId]"
-                    class="appearance-none w-4 h-4 border-1 border-gray-300 rounded-md checked:!bg-green-700 checked:!text-green-700 checked:!border-green-700 focus:outline-none focus:ring-0 focus:ring-transparent hover:ring-0 hover:ring-transparent flex flex-shrink-0 custom-check before:content-[''] after:content-[''] disabled:bg-gray-200 disabled:border-gray-400 disabled:cursor-not-allowed"
-                    :disabled="isCheckboxDisabled(groupId, option.id)"
-                  />
-                  <label :for="'option-' + option.id" class="flex flex-col">
-                    <p>{{ option.name }}</p>
-                    <p v-if="option.extra_price > 0" class="text-neutral-600 text-sm">
-                      +${{ option.extra_price.toFixed(2) }}
-                    </p>
-                    <p
-                      v-if="option.allergens.length"
-                      class="text-sm text-rose-400 flex items-center"
-                    >
-                      <Icon icon="mdi:food-allergy" class="w-4 h-4 mr-1" />
-                      {{ option.allergens.join(", ") }}
-                    </p>
+                  <label :for="'option-' + option.id" class="custom-input-wrapper w-full">
+                    <input
+                      :type="group.min_quantity >= 1 && group.max_quantity === 1 ? 'radio' : 'checkbox'"
+                      :id="'option-' + option.id"
+                      :name="'group-' + groupId"
+                      :value="option.id"
+                      v-model="selectedOptions[groupId]"
+                      class="mr-2 peer appearance-none w-4 h-4 bg-white border border-neutral-300 rounded transition duration-200 checked:!bg-green-700 checked:!border-green-700 focus:outline-none focus:ring-0 focus:ring-transparent flex flex-shrink-0 before:content-[''] after:content-[''] disabled:bg-neutral-200 disabled:cursor-not-allowed"
+                      :disabled="isCheckboxDisabled(groupId, option.id)"
+                    />
+                    <Icon
+                      icon="mdi:check"
+                      class="custom-check-icon"
+                    />
+                    <div>
+                      <p>{{ option.name }}</p>
+                      <p v-if="option.extra_price > 0" class="text-neutral-600 text-sm">
+                        +${{ option.extra_price.toFixed(2) }}
+                      </p>
+                      <p
+                        v-if="option.allergens.length"
+                        class="text-sm text-rose-400 flex items-center"
+                      >
+                        <Icon icon="mdi:food-allergy" class="w-4 h-4 mr-1" />
+                        {{ option.allergens.join(", ") }}
+                      </p>
+                    </div>
                   </label>
                 </li>
               </ul>
@@ -436,7 +442,7 @@ const proceedToCheckout = () => {
           <!-- Buttons (fixed at the bottom) -->
           <div class="sticky bottom-0 bg-white pt-4 flex justify-end space-x-4">
             <button @click="closeModal" class="px-4 py-2 bg-gray-300 rounded-full hover:bg-gray-400 transition">Cancel</button>
-            <button @click="addToOrder" class="px-4 py-2 border-1 border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Add to Order</button>
+            <button @click="addToOrder" class="px-4 py-2 border border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Add to Order</button>
           </div>
 
         </div>
@@ -450,7 +456,7 @@ const proceedToCheckout = () => {
         <h3>My order</h3>
         <p>Items: 0</p>
         <p>Total: $0.00</p>
-        <button @click="proceedToCheckout" class="border-1 border-green-700 w-auto text-center rounded-xl hover:bg-green-700 hover:text-white transition m-2 p-2">Proceed to checkout</button>
+        <button @click="proceedToCheckout" class="border border-green-700 w-auto text-center rounded-xl hover:bg-green-700 hover:text-white transition m-2 p-2">Proceed to checkout</button>
       </div>
     </div>
   </div>

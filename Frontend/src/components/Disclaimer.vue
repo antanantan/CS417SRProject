@@ -45,7 +45,7 @@ const close = (agreed) => {
           <div class="flex justify-center space-x-4">
             <button
               type="button"
-              class="px-4 w-32 h-11 border-1 border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition "
+              class="px-4 w-32 h-11 border border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition "
               @click="close(true)"
             >
               I Agree

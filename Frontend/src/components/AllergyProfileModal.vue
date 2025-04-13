@@ -1,5 +1,6 @@
 <script setup>
 import { ref, onUpdated, computed, onMounted, watch } from "vue";
+import Disclaimer from "@/components/Disclaimer.vue"
 import { Icon } from "@iconify/vue";
 import { api, authApi } from "@/api/auth.js";
 import { useRouter, useRoute } from "vue-router";
@@ -170,7 +171,21 @@ const getAllergenName = (id) => {
   return found ? found.name : 'Unknown';
 };
 
+// code for handling disclaimer modal
 const isAgreed = ref(false); 
+const isDisclaimerVisible = ref(false);
+const handleCheckboxClick = (event) => {
+  if (!isAgreed.value) { // if still not agreed
+    event.preventDefault(); // prevent checkbox from being checked
+    isDisclaimerVisible.value = true;
+  } else { // if already agreed
+    isAgreed.value = false; // uncheck the checkbox
+  }
+};
+const closeDisclaimer = (agreed) => {
+  isDisclaimerVisible.value = false;
+  isAgreed.value = agreed;
+};
 
 const goToAllergyPage = () => {
   close();
@@ -226,7 +241,7 @@ const close = () => {
                 <div
                   v-for="allergy in userAllergies"
                   :key="allergy.allergen_id"
-                  class="px-2 py-1 border-1 rounded-full"
+                  class="px-2 py-1 border rounded-full"
                   :class="severityColor(allergy.scale)"
                 >
                   {{ getAllergenName(allergy.allergen_id) }}
@@ -236,7 +251,7 @@ const close = () => {
           </div>
 
           <!-- search bar -->
-          <div class="flex items-center bg-white border-1 border-rose-400 rounded-full h-11 w-full mx-auto">
+          <div class="flex items-center bg-white border border-rose-400 rounded-full h-11 w-full mx-auto">
             <Icon icon="mdi:magnify" class="w-5 h-5 text-rose-400 ml-3" />
             <input
               type="text"
@@ -244,7 +259,7 @@ const close = () => {
               name="allergen-search"
               v-model="searchQuery"
               placeholder="Search allergens..."
-              class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 pr-2"
+              class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 p-2"
             />
             <Icon
               v-if="searchQuery"
@@ -285,14 +300,15 @@ const close = () => {
               <!-- if there is only one item in allergen group -->
               <template v-if="group.allergens.length === 1">
                 <div class="flex items-center pl-7 relative">
-                  <label :for="`allergen-${group.allergens[0].id}`" class="flex items-center w-full cursor-pointer text-md font-bold text-neutral-800 pb-1">
+                  <label :for="`allergen-${group.allergens[0].id}`" class="custom-input-wrapper w-full text-md font-medium text-neutral-800 pb-1">
                     <input
                       type="checkbox"
                       :id="`allergen-${group.allergens[0].id}`"
                       :name="`allergen-${group.allergens[0].id}`"
                       v-model="group.allergens[0].selected"
-                      @change="toggleAllergen(group.allergens[0]) && (group.allergens[0].scale = 2)" class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose"
+                      @change="toggleAllergen(group.allergens[0]) && (group.allergens[0].scale = 2)" class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400"
                     />
+                    <Icon icon="mdi:check" class="custom-check-icon" />
                     {{ group.name }}
                   </label>
                   <input
@@ -300,7 +316,7 @@ const close = () => {
                     :value="group.allergens[0].selected ? group.allergens[0].scale : 2"
                     :disabled="!group.allergens[0].selected"
                     @input="group.allergens[0].scale = Number($event.target.value)"
-                    class="range-slider appearance-none absolute w-32 right-4 rounded-full cursor-pointer "
+                    class="range-slider appearance-none absolute w-32 right-4 rounded-full cursor-pointertransition-colors duration-200 "
                     :class="[group.allergens[0].selected ? 'bg-gradient-to-r from-green-100 via-yellow-100 to-red-100' : 'bg-neutral-100 cursor-not-allowed']" 
                     min="1" max="3" step="1"/>
                 </div>
@@ -324,15 +340,23 @@ const close = () => {
                     class="w-5 h-5 text-neutral-600 mr-2"
                   />
                   <!-- select all  -->
-                  <input
-                    type="checkbox"
-                    :ref="el => groupCheckboxRefs[group.id] = el"
-                    :id="`group-select-${group.id}`"
-                    :checked="group.allergens.every(a => a.selected)"
-                    @click.stop="toggleGroupSelection(group.id, !group.allergens.every(a => a.selected))"
-                    class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose"
-                  />
-                  <label class="text-md font-bold text-neutral-800 py-1">
+                  <div class="custom-input-wrapper">
+                    <input
+                      type="checkbox"
+                      :ref="el => groupCheckboxRefs[group.id] = el"
+                      :id="`group-select-${group.id}`"
+                      :checked="group.allergens.every(a => a.selected)"
+                      @click.stop="toggleGroupSelection(group.id, !group.allergens.every(a => a.selected))"
+                      class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400 indeterminate:bg-rose-400 indeterminate:border-rose-400"
+                    />
+                    <Icon icon="mdi:check" class="custom-check-icon"
+                      />
+                    <Icon 
+                      icon="mdi:minus"
+                      class="custom-minus-icon"
+                    />
+                  </div>
+                  <label class="text-md font-medium text-neutral-800 py-1">
                     {{ group.name }}
                   </label>
                   <input 
@@ -354,15 +378,16 @@ const close = () => {
                     class="flex items-center"
                   >
                     
-                    <label :for="`allergen-${allergen.id}`" class="flex items-center w-full cursor-pointer text-neutral-700">
+                    <label :for="`allergen-${allergen.id}`" class="custom-input-wrapper w-full text-neutral-700">
                       <input
                         type="checkbox"
                         :id="`allergen-${allergen.id}`"
                         :name="`allergen-${allergen.id}`"
                         v-model="allergen.selected"
                         @change="toggleAllergen(allergen) && (allergen.scale = 2)"
-                        class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose"
+                        class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400"
                       />
+                      <Icon icon="mdi:check" class="custom-check-icon" />
                       {{ allergen.name }}
                     </label>
                     <input 
@@ -382,20 +407,22 @@ const close = () => {
 
           <!-- buttons -->
           <div class="pt-0">
-            <div class="flex items-center pb-2">
-              <input type="checkbox" id="agree" v-model="isAgreed" class="mr-2 h-4 w-4 border-neutral-300 rounded focus:ring-0 focus:outline-none focus:ring-transparent checkbox-rose" />
-              <label for="agree" class="text-sm text-neutral-700">
+            <label class="custom-input-wrapper pb-2">
+              <input type="checkbox" id="agree" :checked="isAgreed" @click="handleCheckboxClick" class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400" />
+              <Icon icon="mdi:check" class="custom-check-icon" />
+              <span for="agree" class="text-sm text-neutral-700">
                 I agree to the terms of the disclaimer.
-              </label>
-            </div>
+              </span>
+            </label>
             <div class="flex justify-end space-x-4">
               <button @click="resetAllAllergies" class="px-4 h-11 bg-neutral-300 text-neutral-800 rounded-full hover:bg-neutral-400">Reset</button>
-              <button @click="applyAllAllergies" :disabled="!isAgreed" class="px-4 h-11 border-1 border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition disabled:opacity-50 " :title="!isAgreed ? 'Please agree to continue.' : ''">Apply</button>
+              <button @click="applyAllAllergies" :disabled="!isAgreed" class="px-4 h-11 border border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition disabled:opacity-50 " :title="!isAgreed ? 'Please agree to continue.' : ''">Apply</button>
             </div>
           </div>
         </div>
       </div>
     </section>
   </div>
+  <Disclaimer v-if="isDisclaimerVisible" @close="closeDisclaimer"/>
 </template>
 

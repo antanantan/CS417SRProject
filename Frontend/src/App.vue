@@ -21,7 +21,7 @@ const showBottomNav = computed(() => {
   <v-app>
     <Navbar />
     <v-main>
-      <div class="py-16 pb-24">
+      <div class="pt-16">
         <RouterView />
       </div>
     </v-main>
@@ -31,7 +31,6 @@ const showBottomNav = computed(() => {
 
 <style>
 body{
-  padding-bottom: 56px;
   -webkit-tap-highlight-color: transparent;  
 }
 
