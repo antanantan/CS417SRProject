@@ -5,8 +5,8 @@ const router = useRouter();
 
 const emit = defineEmits(['close']); 
 
-const close = (closeandNavigate) => {
-  emit('close', closeandNavigate); // Sends true if "I disagree was clicked and false if "I agree" was clicked
+const close = (agreed) => {
+  emit('close', agreed);
 };
 
 </script>
