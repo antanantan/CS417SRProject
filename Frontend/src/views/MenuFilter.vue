@@ -228,14 +228,12 @@ const proceedToCheckout = () => {
 <template>
   <div class="flex flex-col md:flex-row justify-between gap-0 p-3 bg-neutral-50">
     <!-- Left Column (hidden in phone screen) -->
-    <div class="w-full md:w-1/3 lg:w-1/4">
-      <div class="bg-white rounded-xl shadow-md m-3 overflow-hidden">
-        <div class="p-3">
-          <button @click="goBackToLocation" class="flex items-center text-green-700 hover:text-green-900">
-            <Icon icon="mdi:arrow-left" class="w-5 h-5 mr-1" />
-            <span>Back to Restaurants</span>
-          </button>
-        </div>
+    <div class="w-full md:w-1/3 lg:w-1/4 p-3">
+      <button @click="goBackToLocation" class="h-11 px-3 mb-6 w-full flex items-center bg-white rounded-xl shadow-md text-green-700 hover:text-green-900 hovehover:bg-neutral-100 transition duration-200">
+        <Icon icon="mdi:arrow-left" class="w-5 h-5 mr-1" />
+        <span>Back to Restaurants</span>
+      </button>
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-3">
         <img v-if="restaurant.image" :src="restaurant.image" alt="Restaurant Image" class="w-full h-40 object-cover" />
         <div class="p-3 text-green-700">
           <h1  class="text-lg font-bold">{{ restaurant.name }}</h1>
@@ -282,7 +280,7 @@ const proceedToCheckout = () => {
       </div>
       
       <!-- Menu Categories -->
-      <div class="hidden md:block p-6 sticky top-12 z-10">
+      <div class="hidden md:block sticky top-12 z-10">
         <h2  class="text-lg font-bold p-2">Menu</h2>
         <ul>
           <!-- <hr class="border-neutral-500"/> -->
@@ -296,7 +294,7 @@ const proceedToCheckout = () => {
     <!-- Center Column (full width in phones) -->
     <div class="w-full md:w-2/3 lg:w-1/2">
       <!-- Search & Allergy Filter Container -->
-      <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3">
+      <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3 mb-1">
         <!--  Search Box -->
         <div class="flex items-center !bg-white border border-green-700 rounded-full h-11 flex-grow w-full ">
           <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-3 flex-shrink-0" />

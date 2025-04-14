@@ -197,7 +197,7 @@ const searchPrev = () => {
 </script>
 
 <template>
-  <div class="flex flex-col py-6 px-6">
+  <div class="flex flex-col p-6">
     <div class="shrink-0 z-10 bg-white">
       <!-- header -->
       <div class="flex justify-between items-center pb-2">

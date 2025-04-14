@@ -145,8 +145,10 @@ const continueAsGuest = async () => {
       <div class="flex flex-1 items-center justify-center md:items-stretch md:justify-start">
         <RouterLink class="flex flex-shrink-0 items-center" to="/">
           <img class="h-10 w-auto" :src="logo" alt="Eat Well Logo"/>
-          <span class="hidden md:block text-white text-2xl font-bold">
-          </span>
+          <div class="flex flex-col items-start hidden md:block text-rose-50 mx-2">
+            <div class="text-lg font-semibold leading-tight">Eat Well</div>
+            <div class="text-xs leading-none">allergy-friendly ordering</div>
+          </div>
         </RouterLink>
         <div class="md:ml-auto">
           <div class="flex items-center space-x-2">
