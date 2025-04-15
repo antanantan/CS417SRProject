@@ -19,6 +19,12 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    hmr: {
+      overlay: true,
+    },
+    css: {
+      devSourcemap: true,
+    }
   },
   resolve: {
     alias: {

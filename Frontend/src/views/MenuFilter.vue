@@ -1,5 +1,4 @@
 <script setup>
-import Card from '@/components/Steps_Bottom.vue';
 import { Icon } from '@iconify/vue';
 import { useRouter, useRoute } from 'vue-router';
 import { ref, computed, onMounted } from "vue";
@@ -11,14 +10,24 @@ import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergie
 const router = useRouter();
 const route = useRoute(); // To access route parameters
 
+const goBackToLocation = () => {
+  router.push({ name: 'Location' });
+};
+
 // make reactive variables for the selected restaurant and menu
 const restaurant = ref({ name: "", address: "", phone: "", category: "", price_range:"", status: "", hours: "{}", image:""});
 const menu = ref([]);
+const props = defineProps({
+  restaurantId: {
+    type: String,
+    required: false, // ← optional
+  },
+});
 
 // Function to fetch menu data for the selected restaurant
 const fetchMenu = async (restaurantId) => {
   try {
-    console.log("Fetching menu data for restaurant:", restaurantId);
+    console.log(`Fetching menu data for restaurant:`, restaurantId);
     const response = await api.get(`/menu/${restaurantId}`);
     console.log("API Response:", response.data);
 
@@ -26,6 +35,16 @@ const fetchMenu = async (restaurantId) => {
     menu.value = response.data.menu;
   } catch (error) {
     console.error("Error fetching menu:", error);
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      await router.push("/login");
+    } else {
+      const response = await api.get("/menu/1");
+      console.log("API Response:", response.data);
+
+      restaurant.value = response.data.restaurant;
+      menu.value = response.data.menu;
+    }
   }
 };  
 
@@ -36,6 +55,7 @@ onMounted(() => {
     fetchMenu(restaurantId); // Fetch the menu for the restaurant
   } else {
     console.error("No restaurant ID found in the URL");
+    fetchMenu(1);
   }
 });
 
@@ -136,12 +156,55 @@ const selectedOptions = ref({});
 const openModal = (item) => {
   selectedItem.value = item;
   selectedOptions.value = {}; // reset options
+  for (const [groupId, group] of Object.entries(item.options)) {
+    // multiple options (checkboxes)
+    if (group.min_quantity === 0 || group.max_quantity > 1) {
+      selectedOptions.value[groupId] = [];
+    } else {
+      // one option only (radio button)
+      selectedOptions.value[groupId] = null;
+    }
+  }
 };
+
+const isCheckboxDisabled = (groupId, optionId) => {
+  const selected = selectedOptions.value[groupId]
+  const group = selectedItem.value.options[groupId]
+
+  if (!Array.isArray(selected)) return false
+
+  // selection is removable for the selected option
+  const isSelected = selected.includes(optionId)
+
+  // selection is disabled for the non selected option if # of selected options is equal to max_quantity
+  return selected.length >= group.max_quantity && !isSelected
+}
 
 // close modal
 const closeModal = () => {
   selectedItem.value = null;
 };
+
+// add/remove item from order
+const addItem = (item) => {
+  if (!item.quantity) {
+    item.quantity = 1
+  } else if (item.quantity < 10) {
+    item.quantity++
+  } else {
+    // when quantity reaches maximum
+    alert("Maximum quantity reached");
+    item.quantity = 10
+  }
+}
+
+const removeItem = (item) => {
+  if (item.quantity > 1) {
+    item.quantity--
+  } else {
+    item.quantity = 0
+  }
+}
 
 // add to order (change later)
 const addToOrder = () => {
@@ -165,8 +228,12 @@ const proceedToCheckout = () => {
 <template>
   <div class="flex flex-col md:flex-row justify-between gap-0 p-3 bg-neutral-50">
     <!-- Left Column (hidden in phone screen) -->
-    <div class="w-full md:w-1/3 lg:w-1/4">
-      <div class="bg-white rounded-xl shadow-md m-3 overflow-hidden">
+    <div class="w-full md:w-1/3 lg:w-1/4 p-3">
+      <button @click="goBackToLocation" class="h-11 px-3 mb-6 w-full flex items-center bg-white rounded-xl shadow-md text-green-700 hover:text-green-900 hovehover:bg-neutral-100 transition duration-200">
+        <Icon icon="mdi:arrow-left" class="w-5 h-5 mr-1" />
+        <span>Back to Restaurants</span>
+      </button>
+      <div class="bg-white rounded-xl shadow-md overflow-hidden mb-3">
         <img v-if="restaurant.image" :src="restaurant.image" alt="Restaurant Image" class="w-full h-40 object-cover" />
         <div class="p-3 text-green-700">
           <h1  class="text-lg font-bold">{{ restaurant.name }}</h1>
@@ -213,7 +280,7 @@ const proceedToCheckout = () => {
       </div>
       
       <!-- Menu Categories -->
-      <div class="hidden md:block p-6 sticky top-12 z-10">
+      <div class="hidden md:block sticky top-12 z-10">
         <h2  class="text-lg font-bold p-2">Menu</h2>
         <ul>
           <!-- <hr class="border-neutral-500"/> -->
@@ -227,20 +294,20 @@ const proceedToCheckout = () => {
     <!-- Center Column (full width in phones) -->
     <div class="w-full md:w-2/3 lg:w-1/2">
       <!-- Search & Allergy Filter Container -->
-      <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3">
+      <div class="sticky top-20 z-40 flex justify-center items-center w-full mx-auto gap-3 p-3 mb-1">
         <!--  Search Box -->
-        <div class="flex items-center !bg-white border-1 border-green-700 rounded-full p-1 flex-grow w-full ">
-          <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 m-2 flex-shrink-0" />
-          <input type="text" id="menu-search" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:outline-none text-neutral-700 w-full" />
+        <div class="flex items-center !bg-white border border-green-700 rounded-full h-11 flex-grow w-full ">
+          <Icon icon="mdi:magnify" class="w-5 h-5 text-green-700 ml-3 flex-shrink-0" />
+          <input type="text" id="menu-search" v-model="searchQuery" placeholder="Search menu..." @input="onInput" class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 w-full p-2" />
           <span v-if="searchQuery && filteredMenu.length" class="mr-2 text-green-700 ">{{ searchIndex + 1 }}/{{ filteredMenu?.length || 0 }}</span>
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-up" @click="searchPrev" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
           <Icon v-if="searchQuery" icon="mdi:keyboard-arrow-down" @click="searchNext" class="w-5 h-5 text-green-700 mr-2 flex-shrink-0" />
-          <Icon v-if="searchQuery" icon="mdi:close" @click="clearSearch" class="w-5 h-5 text-green-700 mr-2 cursor-pointer flex-shrink-0" />
+          <Icon v-if="searchQuery" icon="mdi:close" @click="clearSearch" class="w-5 h-5 text-green-700 mr-3 cursor-pointer flex-shrink-0" />
         </div>
 
         <!-- Allergy Filter ON/OFF Button-->
-        <button @click="toggleAllergyFilter" class="flex items-center p-1 md:w-48 rounded-full border-1 flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
-          <Icon icon="mdi:food-allergy" class="w-5 h-5 m-2 flex-shrink-0" />
+        <button @click="toggleAllergyFilter" class="flex items-center justify-center md:justify-start h-11 w-11 md:w-48 rounded-full border flex-shrink-0 " :class="{'bg-rose-50 text-rose-400 border-rose-400': allergyFilterOn, 'bg-neutral-50 text-neutral-400 border-neutral-400': !allergyFilterOn}">
+          <Icon icon="mdi:food-allergy" class="w-5 h-5 ml-3 mr-2 flex-shrink-0" />
           <span class="hidden md:block">Allergy Filter: {{ allergyFilterOn ? 'ON' : 'OFF' }}</span>
         </button>
       </div>
@@ -272,12 +339,44 @@ const proceedToCheckout = () => {
 
                 <!-- show modal if the item has options -->
                 <button v-if="Object.keys(item.options).length" @click="openModal(item)" class="group rounded-full text-green-700 shadow-md bg-white hover:!bg-green-700 absolute right-3 bottom-3">
-                  <Icon icon="mdi:plus" class="w-5 h-5 text-green-700 group-hover:text-white m-2" />
+                  <Icon v-if="!item.quantity || item.quantity === 0" icon="mdi:plus" class="w-5 h-5 text-green-700 group-hover:text-white m-2" />
+                  <span v-else class="group-hover:text-white">
+                    {{ item.quantity ? item.quantity : '' }}
+                  </span>
                 </button>
 
-                <button v-else class="group rounded-full text-green-700 hover:bg-green-700 shadow-md absolute right-3 bottom-3">
+                <!-- <button v-else class="group rounded-full text-green-700 hover:bg-green-700 shadow-md absolute right-3 bottom-3">
                   <Icon icon="mdi:plus" class="w-5 h-5 group-hover:text-white m-2" />
-                </button>
+                </button> -->
+                <!-- switch button design depending on quantity -->
+                <div v-else class="group rounded-full text-green-700 hover:bg-green-700 shadow-md absolute right-3 bottom-3 flex items-center ">
+                  <!-- when quantity = 0  (default) -->
+                  <button v-if="!item.quantity || item.quantity === 0" @click="addItem(item)">
+                    <Icon icon="mdi:plus" class="w-5 h-5 group-hover:text-white m-2" />
+                  </button>
+
+                  <!-- when quantity = 1 ( 🗑️ 1 + ) -->
+                  <div v-else-if="item.quantity === 1" class="flex items-center justify-between bg-white rounded-full w-24">
+                    <button @click="removeItem(item)">
+                      <Icon icon="mdi:trash-can-outline" class="w-5 h-5 m-2" />
+                    </button>
+                    <span class="text-center">{{ item.quantity }}</span>
+                    <button @click="addItem(item)" class="text-green-700">
+                      <Icon icon="mdi:plus" class="w-5 h-5 m-2" />
+                    </button>
+                  </div>
+
+                  <!-- when quantity ≥ 2 ( - quantity + ) -->
+                  <div v-else class="flex items-center justify-between bg-white rounded-full w-24">
+                    <button @click="removeItem(item)" >
+                      <Icon icon="mdi:minus" class="w-5 h-5 m-2" />
+                    </button>
+                    <span class="text-center">{{ item.quantity }}</span>
+                    <button @click="addItem(item)" class="text-green-700">
+                      <Icon icon="mdi:plus" class="w-5 h-5 m-2" />
+                    </button>
+                  </div>
+                </div>
               </div>
 
             </li>
@@ -285,7 +384,7 @@ const proceedToCheckout = () => {
         </div>
       </div>
 
-      <!-- Click outside to close -->
+      <!-- Modal: Click outside to close -->
       <div v-if="selectedItem" class="z-[9999] fixed inset-0 bg-neutral-700 bg-opacity-50 flex items-center justify-center" @click.self="closeModal">
         <!-- Modal body (scrollable) -->
         <div class="relative p-4 m-4 bg-white rounded-xl shadow-md w-96 max-h-[80vh] flex flex-col overflow-hidden">
@@ -298,21 +397,50 @@ const proceedToCheckout = () => {
           <!-- Option selection (scrollable) -->
           <div class="flex-1 overflow-y-auto">
             <p class="text-center text-neutral-600 mb-2">Select your options:</p>
-            <div v-for="(options, groupName) in selectedItem?.options" :key="groupName" class="mb-4">
-              <strong class="text-sm font-semibold">{{ groupName }}</strong>
+            <div v-for="(group, groupId) in selectedItem?.options" :key="groupId" class="mb-4">
+              <strong class="font-semibold">{{ group.description }}</strong>
+              <span v-if="group.min_quantity==group.max_quantity" class="text-sm text-neutral-500"> (Required)</span>
+              <span v-else-if="group.max_quantity > 0" class="text-sm text-neutral-500"> (Optional: Choose up to {{ group.max_quantity }})</span>
               <ul class="mt-2 space-y-2">
-                <li v-for="option in options" :key="option.name" class="flex items-center space-x-2">
-                  <input type="radio" :name="groupName" :value="option.name" v-model="selectedOptions[groupName]" class="form-radio text-green-700" />
-                  <span>{{ option.name }} (+${{ option.extra_price.toFixed(2) }})</span>
+                <li v-for="option in group.items" :key="option.id" class="flex items-start space-x-2">
+                  <!-- Radio if max_quantity == 1, else checkbox -->
+                  <label :for="'option-' + option.id" class="custom-input-wrapper w-full">
+                    <input
+                      :type="group.min_quantity >= 1 && group.max_quantity === 1 ? 'radio' : 'checkbox'"
+                      :id="'option-' + option.id"
+                      :name="'group-' + groupId"
+                      :value="option.id"
+                      v-model="selectedOptions[groupId]"
+                      class="mr-2 peer appearance-none w-4 h-4 bg-white border border-neutral-300 rounded transition duration-200 checked:!bg-green-700 checked:!border-green-700 focus:outline-none focus:ring-0 focus:ring-transparent flex flex-shrink-0 before:content-[''] after:content-[''] disabled:bg-neutral-200 disabled:cursor-not-allowed"
+                      :disabled="isCheckboxDisabled(groupId, option.id)"
+                    />
+                    <Icon
+                      icon="mdi:check"
+                      class="custom-check-icon"
+                    />
+                    <div>
+                      <p>{{ option.name }}</p>
+                      <p v-if="option.extra_price > 0" class="text-neutral-600 text-sm">
+                        +${{ option.extra_price.toFixed(2) }}
+                      </p>
+                      <p
+                        v-if="option.allergens.length"
+                        class="text-sm text-rose-400 flex items-center"
+                      >
+                        <Icon icon="mdi:food-allergy" class="w-4 h-4 mr-1" />
+                        {{ option.allergens.join(", ") }}
+                      </p>
+                    </div>
+                  </label>
                 </li>
               </ul>
             </div>
           </div>
 
-          <!-- Buttons (fized at the bottom) -->
-          <div class="sticky bottom-0 bg-white pt-4 flex justify-end space-x-2">
-            <button @click="closeModal" class="px-4 py-2 bg-gray-300 rounded-md hover:bg-gray-400 transition">Cancel</button>
-            <button @click="addToOrder" class="px-4 py-2 bg-green-700 text-white rounded-md hover:bg-green-800 transition">Add to Order</button>
+          <!-- Buttons (fixed at the bottom) -->
+          <div class="sticky bottom-0 bg-white pt-4 flex justify-end space-x-4">
+            <button @click="closeModal" class="px-4 py-2 bg-gray-300 rounded-full hover:bg-gray-400 transition">Cancel</button>
+            <button @click="addToOrder" class="px-4 py-2 border border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Add to Order</button>
           </div>
 
         </div>
@@ -326,9 +454,9 @@ const proceedToCheckout = () => {
         <h3>My order</h3>
         <p>Items: 0</p>
         <p>Total: $0.00</p>
-        <button @click="proceedToCheckout" class="border-1 border-green-700 w-auto text-center rounded-xl hover:bg-green-700 hover:text-white transition m-2 p-2">Proceed to checkout</button>
+        <button @click="proceedToCheckout" class="border border-green-700 w-auto text-center rounded-xl hover:bg-green-700 hover:text-white transition m-2 p-2">Proceed to checkout</button>
       </div>
     </div>
   </div>
-  <Card></Card>
+
 </template>

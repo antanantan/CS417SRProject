@@ -12,9 +12,16 @@ const new_email = ref('');
 const errorMessage = ref(''); 
 const guestToken = ref(null);
 const convertGuest = ref(false);
+const isConvertingFromGuest = ref(false);
 
 //checks if user is a guest with a token 
 onMounted(() => {
+  //check if converting from guest
+  const convertingFromGuest = localStorage.getItem('convertingFromGuest') === 'true';
+  if (convertingFromGuest) {
+    isConvertingFromGuest.value = true;
+  }
+
   if(localStorage.getItem('is_guest') === 'true' && localStorage.getItem('token')){
     guestToken.value = localStorage.getItem('token');
     convertGuest.value = true;
@@ -72,7 +79,15 @@ const register= async () => {
       alert("Your guest account has been converted to a full account. You can now log in with your new credentials.");
     }
 
-    router.push('/profile');
+    const convertingFromGuest = localStorage.getItem('convertingFromGuest') === 'true';
+    if (convertingFromGuest) {
+      localStorage.removeItem('convertingFromGuest');
+      const returnPath = localStorage.getItem('returnPath') || '/allergy_list';
+      localStorage.removeItem('returnPath');
+      await router.push(returnPath);
+    } else {
+      await router.push('/allergy_list');
+    }
 
   } catch(error){
     if (error.response){  

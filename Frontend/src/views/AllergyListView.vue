@@ -1,110 +1,179 @@
 <script setup>
-import Card from '@/components/Steps_Bottom.vue';
-import {useRouter} from "vue-router";
-import Modal from "@/components/Disclaimer.vue"
-import { api, authApi } from '@/api/auth.js';
-import { ref, computed, onMounted} from 'vue';
-import axios from "axios";
+import { useRouter, useRoute } from "vue-router";
+import Disclaimer from "@/components/Disclaimer.vue"
+import { api, authApi } from "@/api/auth.js";
+import { ref, onUpdated, computed, onMounted, watch } from "vue";
+import { userAllergies, fetchUserAllergies, applyUserAllergySelections } from '@/composables/useUserAllergies.js';
+import { Icon } from "@iconify/vue";
 
 const router = useRouter();
+const route = useRoute();
 
+// allergen data
 const allergenGroups = ref([]);
 const allergenItems = ref([]);
-const allergies = ref([]);
 
-// code for handling modal
-const isModalVisible = ref(true);
-const closeModal = (closeandNavigate) => {
-  isModalVisible.value = false;
-  if (closeandNavigate){
-    router.push('/');
-  }
-};
+const groupVisibility = ref({});
 
-// code for pulling allergy list from backend
-const loadAllergies = async () => {
-  const token = localStorage.getItem("token"); 
+// get allergen data from backend
+const fetchAllergenData = async () => {
   try {
-    const response = await api.get('/allergens');
-    console.log("API Response:", response.data);
-
+    const response = await api.get("/allergens");
     allergenGroups.value = response.data.allergen_groups;
-    allergenItems.value = response.data.allergen_items;
+    allergenItems.value = initializeAllergenItems(response.data.allergen_items);
+    groupVisibility.value = Object.fromEntries(allergenGroups.value.map(g => [g.id, false]));
   } catch (error) {
-    console.error('Error loading allergies:', error);
+    console.error("Error fetching allergy data:", error);
+    allergenGroups.value = [];
+    allergenItems.value = [];
   }
 };
 
-onMounted(() => {loadAllergies();});
-
-// function to handle saving allergy profile to user.
-const saveAllergies = async () => {
-  const token = localStorage.getItem("token");; 
-  const allergiesData = allergies.value.map(allergy => {
-    let scale = null;
-
-// Update the scale based on severity
-  if (allergy.severity === 'intolerance') {
-    scale = 0;
-  } else if (allergy.severity === 'mild') {
-    scale = 1;
-  } else if (allergy.severity === 'moderate') {
-    scale = 2;
-  } else if (allergy.severity === 'strong') {
-    scale = 3;
-  }   
-  return {
-    name: allergy.name,
-    scale: scale
-  };
-  }).filter(allergy => allergy.scale !== null);
-  if (allergiesData.length === 0) {
-    console.log("Empty list.");
-    return; 
-  }
-
-
-  console.log("Sending this data:", allergiesData);
-
-  try {
-    const response = await api.post('/user/allergies', 
-      { allergies: allergiesData },
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
-    console.log(response.data.message); 
-  } catch (error) {
-    console.error('Error saving allergies:', error.response?.data?.message || error.message);
-  }
+const initializeAllergenItems = (rawItems) => {
+  return rawItems.map(item => ({
+    ...item,
+    selected: false,
+    scale: 2,
+  }));
 };
 
-
-
-//search functionality
-const searchQuery = ref("");
-const filteredAllergies = computed(() => {
-  return allergies.value
-    ? allergies.value.filter(a =>
-    a.name.toLowerCase().includes(searchQuery.value.toLowerCase()))
-    : [];
+// get data when modal is opened
+onMounted(async () => {
+  await fetchAllergenData();
+  await fetchUserAllergies();
+  applyUserAllergySelections(allergenItems.value);
 });
 
+// search function
+const searchQuery = ref("");
+const filteredAllergenGroups = computed(() => {
+  const query = searchQuery.value.toLowerCase();
 
-const applyAllAllergies = () => {
-  allergies.value.forEach(allergy => {
-    if (allergy.severity) {
-      allergy.selected = true;
-    }
-  });
+  return allergenGroups.value
+    .map(group => {
+      const allGroupItems = allergenItems.value.filter(a => a.group_id === group.id);
+      const matchingItems = allGroupItems.filter(a =>
+        group.name.toLowerCase().includes(query) ||
+        a.name.toLowerCase().includes(query)
+      );
+
+      return {
+        ...group,
+        allergens: allGroupItems, // keep all items in the group
+        filteredAllergens: matchingItems, // only for matching items
+      };
+    })
+    .filter(group => group.filteredAllergens.length > 0); // at least one item matches
+});
+
+// clear search input
+const clearSearch = () => {
+  searchQuery.value = "";
 };
 
+// allergen selection/removal
+const toggleAllergen = (allergen) => {
+  allergenItems.selected = !allergenItems.selected;
+};
+
+// update backend with selected allergens
+const applyAllAllergies = async () => {
+  const payload = {
+    allergies: allergenItems.value
+      .filter(a => a.selected)
+      .map(a => ({
+        allergen_id: a.id,
+        scale: Number(a.scale), // temporarily set to 1
+      })),
+  };
+
+  try {
+    // console.log("Payload value: ", payload);
+    const response = await authApi.put('/user/allergies', payload);
+    console.log(response.data.message);
+    await fetchUserAllergies();
+    applyUserAllergySelections(allergenItems.value);
+  } catch (error) {
+    console.error(
+      'Error saving allergies:',
+      error.response?.data?.message || error.message
+    );
+  }
+};
+
+// remove all allergen selections
 const resetAllAllergies = () => {
-  allergies.value.forEach(allergy => {
+  allergenItems.value.forEach((allergy) => {
     allergy.severity = "";
     allergy.selected = false;
   });
 };
 
+// hidden/show allergen group items
+const toggleGroup = (groupId) => {
+  groupVisibility.value[groupId] = !groupVisibility.value[groupId];
+};
+// button to sellect all allergens in a group
+const toggleGroupSelection = (groupId, selected) => {
+  allergenItems.value.forEach(item => {
+    if (item.group_id === groupId) {
+      item.selected = selected;
+    }
+  });
+};
+// range slider to set allergen scale
+const updateGroupScale = (groupId, newValue) => {
+  const newScale = Number(newValue);
+  allergenItems.value.forEach(allergen => {
+    if (allergen.group_id === groupId && allergen.selected) {
+      allergen.scale = newScale;
+    }
+  });
+};
 
+const groupCheckboxRefs = ref({});
+onUpdated(() => {
+  filteredAllergenGroups.value.forEach(group => {
+    const allSelected = group.allergens.every(a => a.selected);
+    const noneSelected = group.allergens.every(a => !a.selected);
+    const someSelected = !allSelected && !noneSelected;
+
+    const checkboxEl = groupCheckboxRefs.value[group.id];
+    if (checkboxEl) {
+      checkboxEl.indeterminate = someSelected;
+    }
+  });
+});
+
+// color severity scale
+const severityColor = (scale) => {
+  switch (Number(scale)) {
+    case 1: return '!border-green-400';
+    case 2: return '!border-yellow-400';
+    case 3: return '!border-red-400';
+  }
+};
+// get allergen name from id
+const getAllergenName = (id) => {
+  const found = allergenItems.value.find(item => item.id === id);
+  return found ? found.name : 'Unknown';
+};
+
+// code for handling disclaimer modal
+const isAgreed = ref(false); 
+const isDisclaimerVisible = ref(false);
+const handleCheckboxClick = (event) => {
+  if (!isAgreed.value) { // if still not agreed
+    event.preventDefault(); // prevent checkbox from being checked
+    isDisclaimerVisible.value = true;
+  } else { // if already agreed
+    isAgreed.value = false; // uncheck the checkbox
+  }
+};
+const closeDisclaimer = (agreed) => {
+  isDisclaimerVisible.value = false;
+  isAgreed.value = agreed;
+};
 
 // codes used for searching functionality
 const searchIndex = ref(0);
@@ -128,79 +197,235 @@ const searchPrev = () => {
 </script>
 
 <template>
-  <Modal v-show="isModalVisible" @close="closeModal"/>
+  <div class="flex flex-col p-6">
+    <div class="shrink-0 z-10 bg-white">
+      <!-- header -->
+      <div class="flex justify-between items-center pb-2">
+        <h2 class="text-lg font-semibold text-neutral-900">Allergy Filter</h2>
+      </div>
 
-  <h1>Step 1: Select Your Allergies/Dietary Restrictions</h1>
-  
+      <!-- Applied Allergens Badge List -->
+      <div class="overflow-x-auto">
+        <div class="flex items-center text-sm text-neutral-700 pb-2 space-x-2 min-w-full whitespace-nowrap">
+          <span class="pr-2">Applied allergies: </span>
+          <span v-if="userAllergies.length === 0" class="italic text-neutral-400">None</span>
+          <template v-else>
+            <div
+              v-for="allergy in userAllergies"
+              :key="allergy.allergen_id"
+              class="px-2 py-1 border rounded-full"
+              :class="severityColor(allergy.scale)"
+            >
+              {{ getAllergenName(allergy.allergen_id) }}
+            </div>
+          </template>
+        </div>
+      </div>
 
-  <div class="allergy-container">
-    <div class="controls">
-      <input class="search-box" v-model="searchQuery" placeholder="Search allergies...">
-      <button class="btn" @click="searchPrev">Prev</button>
-      <button class="btn" @click="searchNext">Next</button>
-      <span v-if="filteredAllergies.length">{{ searchIndex + 1 }}/{{ filteredAllergies?.length || 0 }}</span> 
-      <span v-else>No Allergies Found</span>
+      <!-- search bar -->
+      <div class="flex items-center bg-white border border-rose-400 rounded-full h-11 w-full mx-auto">
+        <Icon icon="mdi:magnify" class="w-5 h-5 text-rose-400 ml-3" />
+        <input
+          type="text"
+          id="allergen-search"
+          name="allergen-search"
+          v-model="searchQuery"
+          placeholder="Search allergens..."
+          class="flex-grow bg-transparent border-none placeholder-neutral-400 focus:ring-0 focus:outline-none text-neutral-700 p-2"
+        />
+        <Icon
+          v-if="searchQuery"
+          icon="mdi:close"
+          @click="clearSearch"
+          class="w-5 h-5 text-rose-400 cursor-pointer mr-3"
+        />
+      </div>
+
+      <!-- severity scale -->
+      <div class="relative text-xs pt-2">
+        <div class="absolute w-32 right-4 ">
+          <span class="absolute -left-[50%] -translate-x-1/2 flex flex-items justify-center text-neutral-400">
+            Severity
+            <div class="relative group">
+              <Icon icon="mdi:information" class="w-4 h-4 mx-1 cursor-pointer pointer-events-auto" />
+              <!-- tooltip -->
+              <div
+                class="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 px-2 py-1 text-xs text-white bg-neutral-700 rounded shadow-lg opacity-0 group-hover:!opacity-100 transition-opacity duration-200 whitespace-nowrap z-[9999] pointer-events-none"
+              >
+                Choose how severe the reaction is.<br>
+                - Mild: No reaction, or only with raw food. Cooked food is tolerated.<br>
+                - Moderate: Noticeable symptoms such as hives or stomach upset.<br>
+                - Severe: Airborne exposure or risk of anaphylaxis.
+              </div>
+            </div>
+            :
+          </span>
+          <span class="absolute left-[0%] -translate-x-1/2 text-green-400">Mild</span>
+          <span class="absolute left-[50%] -translate-x-1/2 text-yellow-400">Moderate</span>
+          <span class="absolute left-[100%] -translate-x-1/2 text-red-400">Severe</span>
+        </div>
+      </div>
+
+      <!-- allergens list -->
+      <div class="mt-4 mb-2 overflow-y-auto flex-1 bg-gradient-to-t from-transparent via-white to-white ">
+        <div v-for="group in filteredAllergenGroups" :key="group.id" class="pb-4">
+          <!-- if there is only one item in allergen group -->
+          <template v-if="group.allergens.length === 1">
+            <div class="flex items-center pl-7 relative">
+              <label :for="`allergen-${group.allergens[0].id}`" class="custom-input-wrapper w-full text-md font-medium text-neutral-800 pb-1">
+                <input
+                  type="checkbox"
+                  :id="`allergen-${group.allergens[0].id}`"
+                  :name="`allergen-${group.allergens[0].id}`"
+                  v-model="group.allergens[0].selected"
+                  @change="toggleAllergen(group.allergens[0]) && (group.allergens[0].scale = 2)"
+                  class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400"
+                />
+                <Icon icon="mdi:check" class="custom-check-icon"
+                />
+                {{ group.name }}
+              </label>
+              <input
+                type="range"
+                :value="group.allergens[0].selected ? group.allergens[0].scale : 2"
+                :disabled="!group.allergens[0].selected"
+                @input="group.allergens[0].scale = Number($event.target.value)"
+                class="range-slider appearance-none absolute w-32 right-4 rounded-full cursor-pointer "
+                :class="[group.allergens[0].selected ? 'bg-gradient-to-r from-green-100 via-yellow-100 to-red-100' : '!bg-neutral-100 cursor-not-allowed']" 
+                min="1" max="3" step="1"/>
+            </div>
+          </template>
+
+          <!-- if there are multiple items in allergen group -->
+          <template v-else>
+            <div
+              class="flex items-center cursor-pointer select-none relative"
+              @click="toggleGroup(group.id)"
+            >
+              <!-- toggle icon -->
+              <Icon
+                v-if="!groupVisibility[group.id]"
+                icon="mdi:keyboard-arrow-down"
+                class="w-5 h-5 text-neutral-600 mr-2"
+              />
+              <Icon
+                v-else
+                icon="mdi:keyboard-arrow-up"
+                class="w-5 h-5 text-neutral-600 mr-2"
+              />
+              <!-- select all  -->
+              <div class="custom-input-wrapper">
+                <input
+                  type="checkbox"
+                  :ref="el => groupCheckboxRefs[group.id] = el"
+                  :id="`group-select-${group.id}`"
+                  :checked="group.allergens.every(a => a.selected)"
+                  @click.stop="toggleGroupSelection(group.id, !group.allergens.every(a => a.selected))"
+                  class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400 indeterminate:bg-rose-400 indeterminate:border-rose-400"
+                />
+                <Icon icon="mdi:check" class="custom-check-icon"
+                  />
+                <Icon 
+                  icon="mdi:minus"
+                  class="custom-minus-icon"
+                />
+              </div>
+              <label class="text-md font-medium text-neutral-800 py-1">
+                {{ group.name }}
+              </label>
+              <input 
+                type="range"
+                @click.stop
+                :value="group.allergens.every(a => a.selected) && group.allergens.every(a => a.scale === group.allergens[0].scale) ? group.allergens[0].scale : 2"
+                :disabled="!group.allergens.every(a => a.selected) || !group.allergens.every(a => a.scale === group.allergens[0].scale)"
+                @input="updateGroupScale(group.id, $event.target.value)" 
+                class="range-slider appearance-none absolute w-32 right-4 rounded-full cursor-pointer "
+                :class="[group.allergens.every(a => a.selected) && group.allergens.every(a => a.scale === group.allergens[0].scale) ? 'bg-gradient-to-r from-green-100 via-yellow-100 to-red-100' : 'bg-neutral-100 cursor-not-allowed']" 
+                min="1" max="3" step="1"
+              />
+              
+            </div>
+            <ul v-if="groupVisibility[group.id]" class="pt-1 space-y-2 pl-7 relative">
+              <li
+                v-for="allergen in group.filteredAllergens"
+                :key="allergen.id"
+                class="flex items-center"
+              >
+                
+                <label :for="`allergen-${allergen.id}`" class="custom-input-wrapper text-neutral-700">
+                  <input
+                    type="checkbox"
+                    :id="`allergen-${allergen.id}`"
+                    :name="`allergen-${allergen.id}`"
+                    v-model="allergen.selected"
+                    @change="toggleAllergen(allergen) && (allergen.scale = 2)"
+                    class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400"
+                  />
+                  <Icon icon="mdi:check" class="custom-check-icon"
+                  />
+                  {{ allergen.name }}
+                </label>
+                <input 
+                  type="range"
+                  :value="allergen.selected ? allergen.scale : 2"
+                  :disabled="!allergen.selected"
+                  @input="allergen.scale = Number($event.target.value)"
+                  class="range-slider appearance-none absolute w-32 right-4 rounded-full cursor-pointer "
+                  :class="[allergen.selected ? 'bg-gradient-to-r from-green-100 via-yellow-100 to-red-100' : 'bg-neutral-100 cursor-not-allowed']" 
+                  min="1" max="3" step="1"
+                />
+              </li>
+            </ul>
+          </template>
+        </div>
+      </div>
+
+      <!-- buttons -->
+      <div class="pt-0">
+        <label class="custom-input-wrapper pb-2">
+          <input type="checkbox" id="agree" :checked="isAgreed" @click="handleCheckboxClick" class="mr-2 peer appearance-none h-4 w-4 bg-white border border-neutral-300 rounded transition duration-200 focus:ring-0 focus:outline-none focus:ring-transparent checked:bg-rose-400 checked:border-rose-400" />
+          <Icon icon="mdi:check" class="custom-check-icon" />
+          <span for="agree" class="text-sm text-neutral-700">
+            I agree to to the terms of the disclaimer.
+          </span>
+        </label>
+        <Disclaimer v-if="isDisclaimerVisible" @close="closeDisclaimer"/>
+        <div class="flex justify-end space-x-4">
+          <button @click="resetAllAllergies" class="px-4 w-24 h-11 bg-neutral-300 text-neutral-800 rounded-full hover:bg-neutral-400">Reset</button>
+          <button @click="applyAllAllergies" :disabled="!isAgreed" class="px-4 w-24 h-11 border border-rose-400 text-rose-400 rounded-full hover:text-white hover:bg-rose-400 transition disabled:opacity-50 " :title="!isAgreed ? 'Please agree to continue.' : ''">Apply</button>
+        </div>
+      </div>
     </div>
-
-    <div class="actions">
-      <button class="btn apply" @click="applyAllAllergies">Apply All</button>
-      <button class="btn reset" @click="resetAllAllergies">Reset All</button>
-      <button class="btn save" @click="saveAllergies">Test Save</button>
-    </div>
-
-    <p>{{ allergies.filter(a => a.selected).length }} allergies applied</p>
-
-    <table>
-      <thead>
-        <tr>
-          <th>Allergy</th>
-          <th>Intolerance</th>
-          <th>Mild</th>
-          <th>Moderate</th>
-          <th>Strong</th>
-        </tr>
-      </thead>
-      <tbody v-if="filteredAllergies.length">
-        <tr v-for="(allergy, index) in filteredAllergies" :key="allergy.id"
-        :class="{ highlighted: index === highlightRow }">
-          <td>{{ allergy.name }}</td>
-          <td><input type="radio" value="intolerance" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
-          <td><input type="radio" value="mild" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
-          <td><input type="radio" value="moderate" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
-          <td><input type="radio" value="strong" v-model="allergy.severity" @change="allergy.selected = allergy.severity != null && allergy.severity !== ''"></td>
-        </tr>
-      </tbody>
-    </table>
   </div>
 
-  <Card></Card>
 </template>
  
+<style>
+.range-slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 1rem;
+  width: 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: none;
+  background-color: #ffffff;
+  box-shadow: 0 0 2px #9FA6AD;
+}
 
+.range-slider:disabled::-webkit-slider-thumb {
+  background-color: #d4d4d4; /* neutral-300 */
+}
 
-<style scoped>
-.allergy-container {
-  padding: 20px;
-  padding-bottom: 100px;
+.range-slider::-moz-range-thumb {
+  height: 1rem;
+  width: 1rem;
+  border-radius: 9999px;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 0 2px #9FA6AD;
 }
-.controls, .actions {
-  margin-bottom: 10px;
-}
-.search-box, .btn {
-  padding: 8px;
-  margin-right: 5px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-}
-.btn.apply {
-  background-color: #4CAF50; /* Green */
-  color: white;
-}
-.btn.reset {
-  background-color: #f44336; /* Red */
-  color: white;
-}
-.highlighted {
-  background-color: yellow;
+
+.range-slider:disabled::-moz-range-thumb {
+  background-color: #d4d4d4;
 }
 </style>

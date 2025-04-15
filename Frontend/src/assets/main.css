@@ -1,3 +1,29 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Wrapper */
+.custom-input-wrapper {
+  @apply relative inline-flex items-center cursor-pointer;
+}
+
+/* copy this style for checkbox / radio button */
+/* .custom-input {
+  @apply peer appearance-none h-4 w-4 rounded bg-white transition duration-200 cursor-pointer focus:ring-0 focus:outline-none focus:ring-transparent;
+} */
+
+/* Iconify icons */
+.custom-check-icon,
+.custom-minus-icon {
+  @apply absolute left-0.5 w-3 h-3 text-white pointer-events-none opacity-0 transition-opacity duration-200;
+}
+
+/* visible icon when checked */
+.peer:checked ~ .custom-check-icon {
+  @apply opacity-100;
+}
+
+/* visible icon when intermediate */
+.peer:indeterminate ~ .custom-minus-icon {
+  @apply opacity-100;
+}

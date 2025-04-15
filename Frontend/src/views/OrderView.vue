@@ -1,11 +1,17 @@
 <script setup>
-import Card from '@/components/Steps_Bottom.vue';
 import { ref, computed } from 'vue';
 import axios from 'axios';
+import { useRouter } from 'vue-router';
+
+const router = useRouter();
 
 const createAccount = () => {
   router.push('/create'); 
 };
+
+const cancelOrder = () => {
+  router.push('/menu'); 
+}
 
 const cardNumber = ref('****-****-****-****');
 const expiryDate = ref('**/**');
@@ -60,7 +66,7 @@ const totalPrice = computed(() => {
         <form @submit.prevent="processPayment">
         <div class="payment-buttons">
           <button type="submit" class="pay-btn">Pay Now</button>
-          <button type="button" class="cancel-btn">Cancel Order</button>
+          <button type="button" class="cancel-btn" @click="cancelOrder">Cancel Order</button>
         </div>
       </form>
       <div class="confirmation">{{ paymentMessage }}</div>
@@ -69,8 +75,7 @@ const totalPrice = computed(() => {
     <RouterLink to="/create" class="text-blue-500 hover:underline" @click.prevent="createAccount" style="text-align: center; display: block; font-size: x-large;">
       To save information for future orders, please create an account.
     </RouterLink>
-    
-    <Card></Card>
+
 </template>
   
 <style scoped>
@@ -106,7 +111,7 @@ h1 {
   padding: 2%;
 }
 .payment-section {
-  background-color: #ffffff;
+  background-color: #F8F8FF;
   padding: 20px;
   border-radius: 8px;
 }

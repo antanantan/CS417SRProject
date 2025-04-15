@@ -8,7 +8,7 @@ from flask_bcrypt import Bcrypt
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity, get_jwt, decode_token
 from geopy.geocoders import Nominatim
 from geopy.distance import geodesic
-from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
+from database.db_models import db, User, AllergenGroup, Allergen, UserAllergy, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping, Cart, CartItem, CartItemOption
 from database.seed_data import seed_db
 
 app = Flask(__name__)
@@ -104,6 +104,7 @@ def create_guest_session():
         "token": token,
         "is_guest": True
     }), 200
+
 
 @app.route('/auth/check', methods=['GET'])
 @jwt_required(optional=True)
@@ -409,69 +410,6 @@ def get_selected_location():
         return jsonify({"error": "An error occurred while fetching the data."}), 500
 
 
-# TODO: implement a guest login function
-
-guest_storage = {}
-
-
-def set_guest_data(key, value):
-    guest_storage[key] = {
-        "value": value,
-        "expires_at": datetime.now() + timedelta(hours=1)  
-    }
-
-# get guest data + delete if expired
-def get_guest_data(key):
-    data = guest_storage.get(key)
-    if data and data["expires_at"] > datetime.now():
-        return data["value"]
-    elif data:
-        del guest_storage[key]
-    return None
-
-#delete guest key
-def del_guest_data(key):
-    if key in guest_storage:
-        del guest_storage[key]
-        return True
-    return False
-
-def get_user_or_guest():
-    try:
-        jwt_data = get_jwt()
-        user_id = get_jwt_identity()
-        is_guest = jwt_data.get('is_guest', False)
-
-        return {
-            "user_id": user_id, 
-            "is_guest": is_guest
-        }
-    except Exception as e:
-        return{
-            "id": None,
-            "is_guest": False,
-            "error": str(e)
-        }
-
-
-@app.route('/auth/guest', methods=['POST'])
-def create_guest_session():
-    #creates a unique id for the guest that just starts with guest tag
-    guest_id = f'guest_{uuid.uuid4().hex}'
-
-    token = create_access_token(identity=guest_id, expires_delta=timedelta(hours=1), additional_claims={"is_guest": True})
-
-    return jsonify({
-        "message": "Guest session created successfully.",
-        "token": token,
-        "is_guest": True
-    }), 200
-
-
-
-
-
-
 @app.route('/allergens', methods=['GET'])
 @cross_origin(origins="http://localhost:3000")
 def get_allergens():
@@ -487,7 +425,7 @@ def get_allergens():
     return jsonify({"allergen_groups": allergen_groups, "allergen_items": allergen_items}), 200
 
 
-@app.route('/user/allergies', methods=['GET', 'POST'])
+@app.route('/user/allergies', methods=['GET', 'PUT'])
 @jwt_required()
 def user_allergies():
     user_data = get_user_or_guest()
@@ -536,7 +474,7 @@ def user_allergies():
         ]
         return jsonify(result), 200
     
-    elif request.method == 'POST':
+    elif request.method == 'PUT':
         data = request.get_json()
         print("Received data:", data)
         allergies = data.get('allergies') 
@@ -667,21 +605,30 @@ def get_menu(restaurant_id):
     menu_list = []
 
     for item in menu_items:
+        # get all option mappings for the menu item
         option_mappings = MenuOptionMapping.query.filter_by(menu_id=item.id).all()
         option_groups = {}
 
+        # change option mappings to a dictionary for easier access
         for mapping in option_mappings:
             option_group = MenuOptionGroup.query.get(mapping.option_group_id)
             if not option_group:
                 continue
             if option_group.description not in option_groups:
-                option_groups[option_group.description] = []
-
+                option_groups[option_group.id] = {
+                    "description": option_group.description,
+                    "min_quantity": option_group.min_quantity,
+                    "max_quantity": option_group.max_quantity,
+                    "items": []
+                }
+            
             option_items = MenuOptionItem.query.filter_by(group_id=option_group.id).all()
             for option_item in option_items:
-                option_groups[option_group.description].append({
+                option_groups[option_group.id]["items"].append({
+                    "id": option_item.id,
                     "name": option_item.name,
-                    "extra_price": option_item.extra_price
+                    "extra_price": option_item.extra_price,
+                    "allergens": option_item.allergens.split(", ") if option_item.allergens else []
                 })
 
         menu_list.append({
@@ -696,6 +643,24 @@ def get_menu(restaurant_id):
             "image": url_for('static', filename=f"menu_img/{item.image_filename}", _external=True) if item.image_filename else None,
             "options": option_groups
         })
+    
+    # calculate open status for the restaurant
+    try:
+        hours = json.loads(restaurant.hours) if restaurant.hours else {}
+    except json.JSONDecodeError:
+        hours = {}
+    today = datetime.today().strftime('%A')
+    current_time = datetime.now().strftime('%I:%M %p')
+    status = None
+    if isinstance(hours, dict) and today in hours and "Closed" not in hours[today]:
+        try:
+            open_time, close_time = hours[today].split(" - ")
+            if open_time <= current_time <= close_time:
+                status = f"Open, Closes {close_time}"
+            else:
+                status = f"Closed, Opens {open_time}"
+        except ValueError:
+            status = None
 
     return jsonify({
         "restaurant": {
@@ -705,12 +670,111 @@ def get_menu(restaurant_id):
             "phone": restaurant.phone,
             "category": restaurant.category if restaurant.category else None,
             "price_range": restaurant.price_range if restaurant.price_range else None,
-            "hours": restaurant.hours,
-            "status": "Open/Closed status here",  # You can calculate status here if needed
+            "hours": restaurant.hours if restaurant.hours else None,
+            "status": status if status else None,
             "image": url_for('static', filename=f"restaurant_img/{restaurant.image_filename}", _external=True) if restaurant.image_filename else None
         },
         "menu": menu_list
     })
+
+
+@app.route('/user/cart', methods=['GET'])
+@jwt_required()
+def get_cart():
+    user_id = get_jwt_identity()
+    cart = Cart.query.filter_by(user_id=user_id).first()
+    if not cart:
+        return jsonify({"cart_items": []}), 200
+
+    result = []
+    for item in cart.items:
+        options = [
+            {
+                "id": opt.option_item.id,
+                "name": opt.option_item.name
+            }
+            for opt in item.options
+        ]
+        result.append({
+            "cart_item_id": item.id,
+            "menu_item_id": item.menu.id,
+            "menu_item_name": item.menu.name,
+            "quantity": item.quantity,
+            "options": options
+        })
+
+    return jsonify({"cart_items": result}), 200
+
+
+@app.route('/user/cart/item', methods=['POST'])
+@jwt_required()
+def add_cart_item():
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    menu_id = data.get("menu_item_id")
+    quantity = data.get("quantity", 1)
+    options = data.get("options", [])
+
+    if not menu_id:
+        return jsonify({"message": "Missing menu_item_id."}), 400
+
+    cart = Cart.query.filter_by(user_id=user_id).first()
+    if not cart:
+        cart = Cart(user_id=user_id, restaurant_id=data.get("restaurant_id"))
+        db.session.add(cart)
+        db.session.commit()
+
+    item = CartItem(cart_id=cart.id, menu_id=menu_id, quantity=quantity)
+    db.session.add(item)
+    db.session.flush()  # item.id を取得するため
+
+    for opt in options:
+        option_item_id = opt.get("option_item_id")
+        if option_item_id:
+            db.session.add(CartItemOption(cart_item_id=item.id, option_item_id=option_item_id))
+
+    db.session.commit()
+    return jsonify({"message": "Cart item added", "cart_item_id": item.id}), 201
+
+
+@app.route('/user/cart/item/<int:item_id>', methods=['PATCH'])
+@jwt_required()
+def update_cart_item(item_id):
+    user_id = get_jwt_identity()
+    data = request.get_json()
+    quantity = data.get("quantity")
+    options = data.get("options", [])
+
+    item = CartItem.query.get(item_id)
+    if not item or item.cart.user_id != user_id:
+        return jsonify({"message": "Cart item not found."}), 404
+
+    if quantity is not None:
+        item.quantity = quantity
+
+    # delete existing options
+    CartItemOption.query.filter_by(cart_item_id=item.id).delete()
+    for opt in options:
+        option_item_id = opt.get("option_item_id")
+        if option_item_id:
+            db.session.add(CartItemOption(cart_item_id=item.id, option_item_id=option_item_id))
+
+    db.session.commit()
+    return jsonify({"message": "Cart item updated."}), 200
+
+
+@app.route('/user/cart/item/<int:item_id>', methods=['DELETE'])
+@jwt_required()
+def delete_cart_item(item_id):
+    user_id = get_jwt_identity()
+    item = CartItem.query.get(item_id)
+    if not item or item.cart.user_id != user_id:
+        return jsonify({"message": "Cart item not found."}), 404
+
+    db.session.delete(item)
+    db.session.commit()
+    return jsonify({"message": "Cart item deleted."}), 200
+
 
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=5000)

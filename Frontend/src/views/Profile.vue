@@ -3,11 +3,11 @@ import axios from 'axios';
 import {ref, onMounted} from 'vue';
 import { api, authApi } from '@/api/auth.js';
 import { useRouter } from 'vue-router';
-import Card from '@/components/Steps_Bottom.vue';
+import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
 
 const username = ref('');
 const email = ref('');
-const allergies = ref([]);
+// const allergies = ref([]);
 const router = useRouter(); 
 const errorMessage = ref('');
 const newPassword = ref('');  
@@ -21,7 +21,7 @@ const fetchProfile = async () => {
     if (response.data.username) {
         username.value = response.data.username;
         email.value = response.data.email;
-        allergies.value = response.data.allergies || [];
+        // allergies.value = response.data.allergies || [];
     } else {
       console.warn('No username returned:', response.data);
       username.value = null;
@@ -108,10 +108,10 @@ const allergyPage = () => {
     </div>
 
     <div class="allergy-section">
-      <h2 class="allergy-header" v-if="allergies">{{ username }}'s allergies...</h2>
+      <h2 class="allergy-header" v-if="userAllergies">{{ username }}'s allergies...</h2>
       <h2 class="allergy-header" v-else>User has no listed allergies</h2>
       <ul class="allergy-list">
-        <li v-for="(allergy, index) in allergies" :key="index">{{ allergy }}</li>
+        <li v-for="(allergy, index) in userAllergies" :key="index">{{ allergy.name }}</li>
       </ul>
     </div>
 

@@ -38,10 +38,10 @@ const router = createRouter({
       component: LocationView 
     },
     {
-      path: '/menu/:restaurantId',
+      path: '/menu/:restaurantId?',
       name: 'Menu',
       component: MenuFilter,
-      props: true, 
+      props: false, 
     },
     {
       path: '/order',

@@ -102,3 +102,67 @@ class MenuOptionMapping(db.Model):
 
     menu = db.relationship('Menu', back_populates='menu_options')
     option = db.relationship('MenuOptionGroup', back_populates='menu_mappings')
+
+class Cart(db.Model):
+    __tablename__ = 'carts'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    user = db.relationship('User')
+    restaurant = db.relationship('Restaurant')
+    items = db.relationship('CartItem', back_populates='cart', cascade="all, delete")
+
+class CartItem(db.Model):
+    __tablename__ = 'cart_items'
+    id = db.Column(db.Integer, primary_key=True)
+    cart_id = db.Column(db.Integer, db.ForeignKey('carts.id'), nullable=False)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menus.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+    cart = db.relationship('Cart', back_populates='items')
+    menu = db.relationship('Menu')
+    options = db.relationship('CartItemOption', back_populates='cart_item', cascade="all, delete")
+
+class CartItemOption(db.Model):
+    __tablename__ = 'cart_item_options'
+    id = db.Column(db.Integer, primary_key=True)
+    cart_item_id = db.Column(db.Integer, db.ForeignKey('cart_items.id'), nullable=False)
+    option_item_id = db.Column(db.Integer, db.ForeignKey('menu_option_items.id'), nullable=False)
+
+    cart_item = db.relationship('CartItem', back_populates='options')
+    option_item = db.relationship('MenuOptionItem')
+
+class Order(db.Model):
+    __tablename__ = 'orders'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    restaurant_id = db.Column(db.Integer, db.ForeignKey('restaurants.id'), nullable=False)
+    total_price = db.Column(db.Float, nullable=False)
+    status = db.Column(db.String, default='pending')  # pending, confirmed, delivered, etc.
+    created_at = db.Column(db.DateTime, default=db.func.now())
+
+    user = db.relationship('User')
+    restaurant = db.relationship('Restaurant')
+    items = db.relationship('OrderItem', back_populates='order', cascade="all, delete")
+
+class OrderItem(db.Model):
+    __tablename__ = 'order_items'
+    id = db.Column(db.Integer, primary_key=True)
+    order_id = db.Column(db.Integer, db.ForeignKey('orders.id'), nullable=False)
+    menu_id = db.Column(db.Integer, db.ForeignKey('menus.id'), nullable=False)
+    quantity = db.Column(db.Integer, nullable=False)
+
+    order = db.relationship('Order', back_populates='items')
+    menu = db.relationship('Menu')
+    options = db.relationship('OrderItemOption', back_populates='order_item', cascade="all, delete")
+
+class OrderItemOption(db.Model):
+    __tablename__ = 'order_item_options'
+    id = db.Column(db.Integer, primary_key=True)
+    order_item_id = db.Column(db.Integer, db.ForeignKey('order_items.id'), nullable=False)
+    option_item_id = db.Column(db.Integer, db.ForeignKey('menu_option_items.id'), nullable=False)
+
+    order_item = db.relationship('OrderItem', back_populates='options')
+    option_item = db.relationship('MenuOptionItem')
