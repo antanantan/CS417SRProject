@@ -15,9 +15,9 @@ def seed_allergens():
         allergen_groups = {
             "Milk": [],
             "Eggs": [],
-            "Fish": ["Tilapia", "Salmon", "Cod", "Trout", "Tuna"],
+            "Fish": ["Tilapia", "Salmon", "Cod", "Trout", "Tuna", "Anchovy"],
             "Crustacean Shellfish": ["Shrimp", "Crab", "Lobster"],
-            "Tree Nuts": ["Almonds", "Brazil Nuts", "Cashews", "Chestnuts", "Hazelnuts", "Macadamia Nuts", "Pecans", "Pistachios", "Walnuts"],
+            "Tree Nuts": ["Almonds", "Brazil Nuts", "Cashews", "Chestnuts", "Hazelnuts", "Macadamia Nuts", "Pecans", "Pistachios", "Walnuts", "Pine Nuts"],
             "Peanuts": [],
             "Wheat": [],
             "Soybeans": [],
@@ -26,7 +26,8 @@ def seed_allergens():
             "Mustard": [],
             "Celery": [],
             "Garlic": [],
-            "Buckwheat": []
+            "Buckwheat": [],
+            "Coconut": []
         }
 
         for group_name, allergen_list in allergen_groups.items():
