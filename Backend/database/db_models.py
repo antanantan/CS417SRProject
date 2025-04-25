@@ -2,6 +2,30 @@ from flask_sqlalchemy import SQLAlchemy
 
 db = SQLAlchemy()
 
+menu_allergen = db.Table(
+    'menu_allergen',
+    db.Column('menu_id', db.Integer, db.ForeignKey('menus.id'), primary_key=True),
+    db.Column('allergen_id', db.Integer, db.ForeignKey('allergens.id'), primary_key=True)
+)
+
+menu_allergen_group = db.Table(
+    'menu_allergen_group',
+    db.Column('menu_id', db.Integer, db.ForeignKey('menus.id'), primary_key=True),
+    db.Column('allergen_group_id', db.Integer, db.ForeignKey('allergen_groups.id'), primary_key=True)
+)
+
+optionitem_allergen = db.Table(
+    'optionitem_allergen',
+    db.Column('option_item_id', db.Integer, db.ForeignKey('menu_option_items.id'), primary_key=True),
+    db.Column('allergen_id',     db.Integer, db.ForeignKey('allergens.id'),            primary_key=True)
+)
+
+optionitem_allergen_group = db.Table(
+    'optionitem_allergen_group',
+    db.Column('option_item_id', db.Integer, db.ForeignKey('menu_option_items.id'), primary_key=True),
+    db.Column('allergen_group_id',     db.Integer, db.ForeignKey('allergen_groups.id'),            primary_key=True)
+)
+
 # User information
 class User(db.Model):
     __tablename__ = 'users'
@@ -17,8 +41,11 @@ class AllergenGroup(db.Model):
     __tablename__ = 'allergen_groups'
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String, nullable=False, unique=True)
+    other_names = db.Column(db.String, nullable=True)
 
     allergens = db.relationship('Allergen', back_populates='group', cascade="all, delete")
+    menus = db.relationship('Menu', secondary=menu_allergen_group, back_populates='allergen_groups')
+    option_items    = db.relationship('MenuOptionItem', secondary=optionitem_allergen_group, back_populates='allergen_groups')
 
 # Allergens in detail
 class Allergen(db.Model):
@@ -29,6 +56,8 @@ class Allergen(db.Model):
 
     group = db.relationship('AllergenGroup', back_populates='allergens')
     user_allergies = db.relationship('UserAllergy', back_populates='allergen', cascade="all, delete")
+    menus = db.relationship('Menu', secondary=menu_allergen, back_populates='allergens')
+    option_items    = db.relationship('MenuOptionItem', secondary=optionitem_allergen, back_populates='allergens')
 
 # Allergy information for each user
 class UserAllergy(db.Model):
@@ -66,13 +95,15 @@ class Menu(db.Model):
     sub_category = db.Column(db.String, nullable=True)
     name = db.Column(db.String, nullable=False)
     price = db.Column(db.Float, nullable=False)
-    ingredients = db.Column(db.Text, nullable=True)  # comma-separated ingredients
-    allergens = db.Column(db.Text, nullable=True)  # comma-separated allergens
+    ingredients = db.Column(db.Text, nullable=True)
+    # allergens = db.Column(db.Text, nullable=True)  # comma-separated allergens
     description = db.Column(db.Text, nullable=True)
     image_filename = db.Column(db.String, nullable=True)
 
     restaurant = db.relationship('Restaurant', back_populates='menus')
     menu_options = db.relationship('MenuOptionMapping', back_populates='menu', cascade="all, delete")
+    allergens = db.relationship('Allergen', secondary=menu_allergen, back_populates='menus')
+    allergen_groups   = db.relationship('AllergenGroup', secondary=menu_allergen_group, back_populates='menus')
 
 class MenuOptionGroup(db.Model):
     __tablename__ = 'menu_option_groups'
@@ -91,10 +122,12 @@ class MenuOptionItem(db.Model):
     group_id = db.Column(db.Integer, db.ForeignKey('menu_option_groups.id'), nullable=False)
     name = db.Column(db.String, nullable=False)
     extra_price = db.Column(db.Float, nullable=False)
-    allergens = db.Column(db.String, nullable=True)
+    # allergens = db.Column(db.String, nullable=True)
 
     group = db.relationship('MenuOptionGroup', back_populates='option_items')
     cart_item_options = db.relationship('CartItemOption', back_populates='option_item')
+    allergens = db.relationship('Allergen', secondary=optionitem_allergen, back_populates='option_items' )
+    allergen_groups = db.relationship('AllergenGroup', secondary=optionitem_allergen_group, back_populates='option_items' )
 
 class MenuOptionMapping(db.Model):
     __tablename__ = 'menu_option_mapping'
