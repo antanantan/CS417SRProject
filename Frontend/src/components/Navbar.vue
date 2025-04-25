@@ -177,26 +177,26 @@ const continueAsGuest = async () => {
               <RouterLink
                 to="/login"
                 :class="[
-                  isActiveLink('/login') ? 'bg-green-900' : 'hover:bg-gray-900 hover:text-white',
+                  isActiveLink('/login') ? 'bg-green-900' : 'hover:bg-white hover:text-green-700',
                   'text-white',
                   'px-3',
                   'py-2',
-                  'rounded-md',
+                  'rounded-full',
                 ]">Log In</RouterLink>
               
               <RouterLink
                 to="/create"
                 :class="[
-                  isActiveLink('/create') ? 'bg-green-900' : 'hover:bg-gray-900 hover:text-white',
+                  isActiveLink('/create') ? 'bg-green-900' : 'hover:bg-white hover:text-green-700',
                   'text-white',
                   'px-3',
                   'py-2',
-                  'rounded-md',
+                  'rounded-full',
                 ]">Sign Up</RouterLink>
               
               <button
                 @click="continueAsGuest"
-                class="text-white px-3 py-2 rounded-md hover:bg-gray-900">
+                class="text-white px-3 py-2 rounded-full hover:bg-white hover:text-green-700">
                 Guest
               </button>
             </template>
@@ -204,7 +204,7 @@ const continueAsGuest = async () => {
             <!-- Show logout for both regular users and guests -->
             <button v-if="!isLoading && (isLoggedIn || isGuest)" 
               @click="handleLogout"
-              class="text-white px-3 py-2 rounded-md hover:bg-gray-900">
+              class="text-white px-3 py-2 rounded-full hover:bg-white hover:text-green-700">
               Logout
             </button>
 

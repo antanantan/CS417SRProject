@@ -691,9 +691,10 @@ def get_cart():
         options = [
             {
                 "id": opt.option_item.id,
-                "name": opt.option_item.name
+                "name": opt.option_item.name,
+                "extra_price": opt.option_item.extra_price
             }
-            for opt in item.options
+            for opt in (item.options or [])
         ]
         result.append({
             "cart_item_id": item.id,
@@ -706,10 +707,44 @@ def get_cart():
     return jsonify({"cart_items": result}), 200
 
 
+@app.route('/user/cart/<int:restaurant_id>', methods=['GET'])
+@jwt_required()
+def get_cart_by_restaurant(restaurant_id):
+    user_id = get_jwt_identity()
+    cart = Cart.query.filter_by(user_id=user_id, restaurant_id=restaurant_id).first()
+    if not cart:
+        return jsonify({"cart_items": []}), 200
+
+    result = []
+    for item in cart.items:
+        options = [
+            {
+                "id": opt.option_item.id,
+                "name": opt.option_item.name,
+                "description": opt.option_item.group.description,
+                "extra_price": opt.option_item.extra_price
+            }
+            for opt in (item.options or [])
+        ]
+        result.append({
+            "cart_item_id": item.id,
+            "menu_item_id": item.menu.id,
+            "menu_item_name": item.menu.name,
+            "menu_item_price": item.menu.price,
+            "quantity": item.quantity,
+            "options": options
+        })
+
+    return jsonify({"cart_items": result}), 200
+
+
 @app.route('/user/cart/item', methods=['POST'])
 @jwt_required()
 def add_cart_item():
-    user_id = get_jwt_identity()
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"message": "Invalid user identity."}), 400
     data = request.get_json()
     menu_id = data.get("menu_item_id")
     quantity = data.get("quantity", 1)
@@ -726,7 +761,7 @@ def add_cart_item():
 
     item = CartItem(cart_id=cart.id, menu_id=menu_id, quantity=quantity)
     db.session.add(item)
-    db.session.flush()  # item.id を取得するため
+    db.session.flush()
 
     for opt in options:
         option_item_id = opt.get("option_item_id")
@@ -740,10 +775,13 @@ def add_cart_item():
 @app.route('/user/cart/item/<int:item_id>', methods=['PATCH'])
 @jwt_required()
 def update_cart_item(item_id):
-    user_id = get_jwt_identity()
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"message": "Invalid user identity."}), 400
     data = request.get_json()
     quantity = data.get("quantity")
-    options = data.get("options", [])
+    options = data.get("options")
 
     item = CartItem.query.get(item_id)
     if not item or item.cart.user_id != user_id:
@@ -752,13 +790,6 @@ def update_cart_item(item_id):
     if quantity is not None:
         item.quantity = quantity
 
-    # delete existing options
-    CartItemOption.query.filter_by(cart_item_id=item.id).delete()
-    for opt in options:
-        option_item_id = opt.get("option_item_id")
-        if option_item_id:
-            db.session.add(CartItemOption(cart_item_id=item.id, option_item_id=option_item_id))
-
     db.session.commit()
     return jsonify({"message": "Cart item updated."}), 200
 
@@ -766,7 +797,10 @@ def update_cart_item(item_id):
 @app.route('/user/cart/item/<int:item_id>', methods=['DELETE'])
 @jwt_required()
 def delete_cart_item(item_id):
-    user_id = get_jwt_identity()
+    try:
+        user_id = int(get_jwt_identity())
+    except (TypeError, ValueError):
+        return jsonify({"message": "Invalid user identity."}), 400
     item = CartItem.query.get(item_id)
     if not item or item.cart.user_id != user_id:
         return jsonify({"message": "Cart item not found."}), 404

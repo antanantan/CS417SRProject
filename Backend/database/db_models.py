@@ -94,6 +94,7 @@ class MenuOptionItem(db.Model):
     allergens = db.Column(db.String, nullable=True)
 
     group = db.relationship('MenuOptionGroup', back_populates='option_items')
+    cart_item_options = db.relationship('CartItemOption', back_populates='option_item')
 
 class MenuOptionMapping(db.Model):
     __tablename__ = 'menu_option_mapping'
@@ -123,7 +124,7 @@ class CartItem(db.Model):
 
     cart = db.relationship('Cart', back_populates='items')
     menu = db.relationship('Menu')
-    options = db.relationship('CartItemOption', back_populates='cart_item', cascade="all, delete")
+    options = db.relationship('CartItemOption', back_populates='cart_item', uselist=True,   cascade="all, delete")
 
 class CartItemOption(db.Model):
     __tablename__ = 'cart_item_options'

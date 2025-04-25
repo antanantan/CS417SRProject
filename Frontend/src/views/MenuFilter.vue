@@ -6,6 +6,7 @@ import { api, authApi } from '@/api/auth.js';
 import axios from "axios";
 import { svg } from 'leaflet';
 import { userAllergies, fetchUserAllergies } from '@/composables/useUserAllergies.js';
+import { addUserCartItem, updateUserCartItem, deleteUserCartItem, userCart, fetchUserCart } from '@/composables/useUserCart.js';
 
 const router = useRouter();
 const route = useRoute(); // To access route parameters
@@ -23,6 +24,7 @@ const props = defineProps({
     required: false, // ← optional
   },
 });
+const restaurantId = computed(() => route.params.restaurantId || '1');
 
 // Function to fetch menu data for the selected restaurant
 const fetchMenu = async (restaurantId) => {
@@ -33,9 +35,9 @@ const fetchMenu = async (restaurantId) => {
 
     restaurant.value = response.data.restaurant;
     menu.value = response.data.menu;
-  } catch (error) {
-    console.error("Error fetching menu:", error);
-    if (error.response?.status === 401) {
+  } catch (err) {
+    console.error("Error fetching menu:", err);
+    if (err.response?.status === 401) {
       localStorage.removeItem("token");
       await router.push("/login");
     } else {
@@ -117,6 +119,9 @@ const searchPrev = () => {
 const clearSearch = () => {
   searchQuery.value = "";
 };
+const onInput = () => {
+  console.log("Searching for:", searchQuery.value);
+};
 
 // functions to parse and display restaurant hours
 const hours = ref(null);
@@ -127,8 +132,8 @@ const parsedHours = computed(() => {
   try {
     return JSON.parse(restaurant.value.hours || "{}");
 
-  } catch (error) {
-    console.error("❌ Error parsing hours:", error);
+  } catch (err) {
+    console.error("❌ Error parsing hours:", err);
     return {};
   }
 });
@@ -185,39 +190,117 @@ const closeModal = () => {
   selectedItem.value = null;
 };
 
-// add/remove item from order
-const addItem = (item) => {
-  if (!item.quantity) {
-    item.quantity = 1
-  } else if (item.quantity < 10) {
-    item.quantity++
-  } else {
-    // when quantity reaches maximum
-    alert("Maximum quantity reached");
-    item.quantity = 10
+// add item to order
+const addItem = async (item) => {
+  try {
+    if (!item.quantity) {
+      const newItem = await addUserCartItem({
+          menu_item_id: item.id,
+          quantity: 1,
+          options: [],
+          restaurant_id: restaurantId.value
+        });
+        item.quantity = 1;
+        item.cart_item_id = newItem.cart_item_id;
+        await fetchUserCart(restaurantId.value);
+        cartItems.value = userCart.value;  
+    } else if (item.quantity < 10) {
+      item.quantity++
+      await updateUserCartItem(item.cart_item_id, item.quantity, []);
+      await fetchUserCart(restaurantId.value);
+      cartItems.value = userCart.value;  
+    } else {
+      // when quantity reaches maximum
+      alert("Maximum quantity reached");
+      item.quantity = 10
+    }
+  } catch (err) {
+    console.error("❌ Failed to add item:", err);
+  }
+}
+// Decrease quantity or remove item from cart
+const removeItem = async (item) => {
+  try {
+    if (item.quantity > 1) {
+      item.quantity--;
+      await updateUserCartItem(item.cart_item_id, item.quantity, []);
+      await fetchUserCart(restaurantId.value);
+      cartItems.value = userCart.value;  
+    } else {
+      await deleteUserCartItem(item.cart_item_id);
+      item.quantity = 0;
+      item.cart_item_id = null;
+      await fetchUserCart(restaurantId.value);
+      cartItems.value = userCart.value;  
+    }
+  } catch (err) {
+    console.error("❌ Failed to remove item:", err);
   }
 }
 
-const removeItem = (item) => {
-  if (item.quantity > 1) {
-    item.quantity--
-  } else {
-    item.quantity = 0
+// Add item with options via modal
+const addItemWithOptions = async () => {
+  try {
+    const formattedOptions = [];
+    for (const groupId in selectedOptions.value) {
+      const opt = selectedOptions.value[groupId];
+      if (Array.isArray(opt)) {
+        opt.forEach(id => formattedOptions.push({ option_item_id: id }));
+      } else {
+        formattedOptions.push({ option_item_id: opt });
+      }
+    }
+
+    const newItem = await addUserCartItem({
+      menu_item_id: selectedItem.value.id,
+      quantity: 1,
+      options: formattedOptions,
+      restaurant_id: restaurantId.value
+    });
+
+    selectedItem.value.quantity = 1;
+    selectedItem.value.cart_item_id = newItem.cart_item_id;
+    await fetchUserCart(restaurantId.value);
+    cartItems.value = userCart.value;  
+    closeModal();
+  } catch (err) {
+    console.error("❌ Failed to add to order:", err);
   }
-}
-
-// add to order (change later)
-const addToOrder = () => {
-  console.log("Order added:", {
-    item: selectedItem.value.name,
-    options: selectedOptions.value,
-  });
-  closeModal();
 };
 
-const onInput = () => {
-  console.log("Searching for:", searchQuery.value);
-};
+const cartItems = ref([]);
+onMounted(async () => {
+  try {
+    const response = await authApi.get(`/user/cart/${restaurantId.value}`);
+    cartItems.value = response.data.cart_items;
+  } catch (err) {
+    console.error("❌ Failed to load cart:", err);
+  }
+});
+
+const menusWithQuantity = computed(() => {
+  const lookup = Object.fromEntries(
+    cartItems.value.map(ci => [ci.menu_item_id, ci])
+  )
+  return menu.value.map(m => {
+    const entry = lookup[m.id] || {}
+    return {
+      ...m,
+      quantity     : entry.quantity    || 0,
+      cart_item_id : entry.cart_item_id || null,
+      options      : m.options     || []
+    }
+  })
+})
+
+// calculate total amount
+const totalAmount = computed(() => {
+  return cartItems.value.reduce((total, item) => {
+    const base = item.menu_item_price * item.quantity;
+    const extras = item.options.reduce((sum, opt) => sum + (opt.extra_price || 0), 0) * item.quantity;
+    return total + base + extras;
+  }, 0);
+});
 
 // proceed to checkout when button is clicked
 const proceedToCheckout = () => {
@@ -280,7 +363,7 @@ const proceedToCheckout = () => {
       </div>
       
       <!-- Menu Categories -->
-      <div class="hidden md:block sticky top-12 z-10">
+      <div class="hidden md:block sticky top-20 z-10">
         <h2  class="text-lg font-bold p-2">Menu</h2>
         <ul>
           <!-- <hr class="border-neutral-500"/> -->
@@ -316,9 +399,9 @@ const proceedToCheckout = () => {
       <span v-if="!filteredMenu.length" class="m-3 text-sm text-neutral-500">No menu found</span>
       <div v-for="category in categories" :key="category" :id="'category-' + category" class="pb-3">
         <h2 class="mx-3 text-xl">{{ category }}</h2>
-        <div class="bg-white m-3 rounded-xl shadow-md overflow-hidden">
+        <div class="bg-white mt-3 mx-3 rounded-xl shadow-md overflow-hidden">
           <ul>
-            <li v-for="(item, index) in menuByCategory(category)" :key="item.id" class="relative">
+            <li v-for="(item, index) in menusWithQuantity.filter(i => i.category === category)" :key="item.id" class="relative">
               <hr v-if="index !== 0" class="border-neutral-500"/>
               <div class="p-3">
                 <!-- padding text if image is available -->
@@ -335,28 +418,25 @@ const proceedToCheckout = () => {
 
                 <!-- show image if available -->
                 <img v-if="item.image" :src="item.image" :alt="item.name"
-                  class="w-32 h-full object-cover absolute right-0 top-0 transform "/>
+                  class="w-32 h-full object-cover absolute right-0 top-0 z-0 "/>
 
                 <!-- show modal if the item has options -->
-                <button v-if="Object.keys(item.options).length" @click="openModal(item)" class="group rounded-full text-green-700 shadow-md bg-white hover:!bg-green-700 absolute right-3 bottom-3">
-                  <Icon v-if="!item.quantity || item.quantity === 0" icon="mdi:plus" class="w-5 h-5 text-green-700 group-hover:text-white m-2" />
-                  <span v-else class="group-hover:text-white">
+                <button v-if="Object.keys(item.options).length" @click="openModal(item)" class="group w-9 h-9 z-30 flex items-center justify-center rounded-full shadow-md bg-white opacity-100 hover:bg-green-700 text-green-700 hover:text-white absolute right-3 bottom-3">
+                  <Icon v-if="!item.quantity || item.quantity === 0" icon="mdi:plus" class="w-5 h-5 " />
+                  <span v-else>
                     {{ item.quantity ? item.quantity : '' }}
                   </span>
                 </button>
 
-                <!-- <button v-else class="group rounded-full text-green-700 hover:bg-green-700 shadow-md absolute right-3 bottom-3">
-                  <Icon icon="mdi:plus" class="w-5 h-5 group-hover:text-white m-2" />
-                </button> -->
                 <!-- switch button design depending on quantity -->
-                <div v-else class="group rounded-full text-green-700 hover:bg-green-700 shadow-md absolute right-3 bottom-3 flex items-center ">
+                <div v-else class="group rounded-full text-green-700 bg-white hover:bg-green-700 shadow-md absolute right-3 bottom-3 flex items-center ">
                   <!-- when quantity = 0  (default) -->
                   <button v-if="!item.quantity || item.quantity === 0" @click="addItem(item)">
                     <Icon icon="mdi:plus" class="w-5 h-5 group-hover:text-white m-2" />
                   </button>
 
                   <!-- when quantity = 1 ( 🗑️ 1 + ) -->
-                  <div v-else-if="item.quantity === 1" class="flex items-center justify-between bg-white rounded-full w-24">
+                  <div v-else-if="item.quantity === 1" class="flex items-center text-green-700 justify-between bg-white rounded-full w-24">
                     <button @click="removeItem(item)">
                       <Icon icon="mdi:trash-can-outline" class="w-5 h-5 m-2" />
                     </button>
@@ -367,12 +447,12 @@ const proceedToCheckout = () => {
                   </div>
 
                   <!-- when quantity ≥ 2 ( - quantity + ) -->
-                  <div v-else class="flex items-center justify-between bg-white rounded-full w-24">
+                  <div v-else class="flex items-center justify-between bg-white rounded-full w-24 text-green-700">
                     <button @click="removeItem(item)" >
                       <Icon icon="mdi:minus" class="w-5 h-5 m-2" />
                     </button>
                     <span class="text-center">{{ item.quantity }}</span>
-                    <button @click="addItem(item)" class="text-green-700">
+                    <button @click="addItem(item)" >
                       <Icon icon="mdi:plus" class="w-5 h-5 m-2" />
                     </button>
                   </div>
@@ -411,7 +491,7 @@ const proceedToCheckout = () => {
                       :name="'group-' + groupId"
                       :value="option.id"
                       v-model="selectedOptions[groupId]"
-                      class="mr-2 peer appearance-none w-4 h-4 bg-white border border-neutral-300 rounded transition duration-200 checked:!bg-green-700 checked:!border-green-700 focus:outline-none focus:ring-0 focus:ring-transparent flex flex-shrink-0 before:content-[''] after:content-[''] disabled:bg-neutral-200 disabled:cursor-not-allowed"
+                      class="mr-2 peer appearance-none w-4 h-4 bg-white border border-neutral-300 rounded transition duration-200 checked:bg-green-700 checked:border-green-700 focus:outline-none focus:ring-0 focus:ring-transparent flex flex-shrink-0 before:content-[''] after:content-[''] disabled:!bg-neutral-200 disabled:!cursor-not-allowed"
                       :disabled="isCheckboxDisabled(groupId, option.id)"
                     />
                     <Icon
@@ -440,7 +520,7 @@ const proceedToCheckout = () => {
           <!-- Buttons (fixed at the bottom) -->
           <div class="sticky bottom-0 bg-white pt-4 flex justify-end space-x-4">
             <button @click="closeModal" class="px-4 py-2 bg-gray-300 rounded-full hover:bg-gray-400 transition">Cancel</button>
-            <button @click="addToOrder" class="px-4 py-2 border border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Add to Order</button>
+            <button @click="addItemWithOptions" class="px-4 py-2 border border-green-700 text-green-700 rounded-full hover:text-white hover:bg-green-700 transition">Add to Order</button>
           </div>
 
         </div>
@@ -449,12 +529,92 @@ const proceedToCheckout = () => {
     </div>
 
     <!-- Right Column (hidden in phone screen) -->
-    <div class="hidden lg:block w-1/4">
-      <div class="bg-white p-3 rounded-xl shadow-md m-3">
-        <h3>My order</h3>
-        <p>Items: 0</p>
-        <p>Total: $0.00</p>
-        <button @click="proceedToCheckout" class="border border-green-700 w-auto text-center rounded-xl hover:bg-green-700 hover:text-white transition m-2 p-2">Proceed to checkout</button>
+    <div class="hidden lg:block w-1/4 self-start sticky top-20">
+      <div class="bg-white rounded-xl shadow-md m-3">
+        <h1 class="text-center text-lg text-green-700 font-bold p-3 pb-0">My Cart</h1>
+        
+        <ul>
+          <li
+            v-for="item in cartItems"
+            :key="item.cart_item_id"
+            class="border-b p-3"
+          >
+            <!-- menu name and price in the same line -->
+            <div class="flex items-center gap-x-2">
+              <span class="flex-1 break-words">
+                {{ item.menu_item_name }}
+              </span>
+              <span class="w-[60px] flex-shrink-0 text-left whitespace-nowrap">
+                $ {{ item.menu_item_price.toFixed(2) }}
+              </span>
+            </div>
+
+            <ul v-if="item.options.length" class="mt-1 pl-4">
+              <li
+                v-for="opt in item.options"
+                :key="opt.id"
+                class="flex items-center gap-x-2 text-sm text-neutral-500"
+              >
+                <span class="flex-1 break-words">
+                  {{ opt.description }}: {{ opt.name }}
+                </span>
+                <span
+                  v-if="opt.extra_price > 0"
+                  class="w-[60px] flex-shrink-0 text-left whitespace-nowrap"
+                >
+                  + $ {{ opt.extra_price.toFixed(2) }}
+                </span>
+              </li>
+            </ul>
+
+            <!-- quantity control here -->
+            <div class="mt-2 pl-4">
+              <!-- when quantity = 1 -->
+              <div
+                v-if="item.quantity === 1"
+                class="flex items-center text-green-700 justify-between bg-white rounded-full shadow-md w-24"
+              >
+                <button @click="removeItem(item)">
+                  <Icon icon="mdi:trash-can-outline" class="w-5 h-5 m-2" />
+                </button>
+                <span class="text-center">{{ item.quantity }}</span>
+                <button @click="addItem(item)" class="text-green-700">
+                  <Icon icon="mdi:plus" class="w-5 h-5 m-2" />
+                </button>
+              </div>
+
+              <!-- when quantity ≥ 2 -->
+              <div
+                v-else
+                class="flex items-center justify-between bg-white text-green-700 rounded-full shadow-md w-24"
+              >
+                <button @click="removeItem(item)">
+                  <Icon icon="mdi:minus" class="w-5 h-5 m-2" />
+                </button>
+                <span class="text-center">{{ item.quantity }}</span>
+                <button @click="addItem(item)">
+                  <Icon icon="mdi:plus" class="w-5 h-5 m-2" />
+                </button>
+              </div>
+            </div>
+          </li>
+        </ul>
+
+        <!-- total -->
+        <div class="flex items-center font-bold mt-4 p-3 text-green-700">
+          <span class="flex-1">
+            Subtotal ({{ cartItems.reduce((sum, i) => sum + i.quantity, 0) }} {{ cartItems.reduce((sum, i) => sum + i.quantity, 0) === 1 ? 'item' : 'items' }})
+          </span>
+          <span class="w-[60px] flex-shrink-0 text-left whitespace-nowrap">
+            $ {{ totalAmount.toFixed(2) }}
+          </span>
+        </div>
+        <!-- Proceed to checkout button -->
+        <div class="flex justify-end p-3">
+          <button @click="proceedToCheckout" class="border border-green-700 w-auto text-center text-green-700 rounded-xl hover:bg-green-700 hover:text-white transition p-2 px-3">
+            Proceed to Checkout
+          </button>
+        </div>
       </div>
     </div>
   </div>

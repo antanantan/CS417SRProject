@@ -93,6 +93,7 @@ const applyAllAllergies = async () => {
     console.log(response.data.message);
     await fetchUserAllergies();
     applyUserAllergySelections(allergenItems.value);
+    router.push("/location");
   } catch (error) {
     console.error(
       'Error saving allergies:',
