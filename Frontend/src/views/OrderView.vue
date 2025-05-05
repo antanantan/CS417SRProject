@@ -1,9 +1,14 @@
 <script setup>
-import { ref, computed } from 'vue';
 import axios from 'axios';
-import { useRouter } from 'vue-router';
+import { Icon } from '@iconify/vue';
+import { useRouter, useRoute } from 'vue-router';
+import { ref, onUpdated, computed, onMounted, watch } from "vue";
+import { api, authApi } from "@/api/auth.js";
+import { addUserCartItem, updateUserCartItem, deleteUserCartItem, userCart, fetchUserCart } from '@/composables/useUserCart.js';
 
 const router = useRouter();
+const route = useRoute();
+
 
 const createAccount = () => {
   router.push('/create'); 
@@ -21,6 +26,109 @@ const paymentMessage = ref('');
 const processPayment = () => {
   paymentMessage.value = "payment processed!";
 }
+const props = defineProps({
+  restaurantId: {
+    type: String,
+    required: false, // ← optional
+  },
+});
+const restaurantId = computed(() => route.params.restaurantId || '1');
+// add item to order
+const addItem = async (item) => {
+  try {
+    if (!item.quantity) {
+      const newItem = await addUserCartItem({
+          menu_item_id: item.id,
+          quantity: 1,
+          options: [],
+          restaurant_id: restaurantId.value
+        });
+        item.quantity = 1;
+        item.cart_item_id = newItem.cart_item_id;
+        await fetchUserCart(restaurantId.value);
+        cartItems.value = userCart.value;  
+    } else if (item.quantity < 10) {
+      item.quantity++
+      await updateUserCartItem(item.cart_item_id, item.quantity, []);
+      await fetchUserCart(restaurantId.value);
+      cartItems.value = userCart.value;  
+    } else {
+      // when quantity reaches maximum
+      alert("Maximum quantity reached");
+      item.quantity = 10
+    }
+  } catch (err) {
+    console.error("❌ Failed to add item:", err);
+  }
+}
+// Decrease quantity or remove item from cart
+const removeItem = async (item) => {
+  try {
+    if (item.quantity > 1) {
+      item.quantity--;
+      await updateUserCartItem(item.cart_item_id, item.quantity, []);
+      await fetchUserCart(restaurantId.value);
+      cartItems.value = userCart.value;  
+    } else {
+      await deleteUserCartItem(item.cart_item_id);
+      item.quantity = 0;
+      item.cart_item_id = null;
+      await fetchUserCart(restaurantId.value);
+      cartItems.value = userCart.value;  
+    }
+  } catch (err) {
+    console.error("❌ Failed to remove item:", err);
+  }
+}
+
+// Add item with options via modal
+const addItemWithOptions = async () => {
+  try {
+    const formattedOptions = [];
+    for (const groupId in selectedOptions.value) {
+      const opt = selectedOptions.value[groupId];
+      if (Array.isArray(opt)) {
+        opt.forEach(id => formattedOptions.push({ option_item_id: id }));
+      } else {
+        formattedOptions.push({ option_item_id: opt });
+      }
+    }
+
+    const newItem = await addUserCartItem({
+      menu_item_id: selectedItem.value.id,
+      quantity: 1,
+      options: formattedOptions,
+      restaurant_id: restaurantId.value
+    });
+
+    selectedItem.value.quantity = 1;
+    selectedItem.value.cart_item_id = newItem.cart_item_id;
+    await fetchUserCart(restaurantId.value);
+    cartItems.value = userCart.value;  
+    closeModal();
+  } catch (err) {
+    console.error("❌ Failed to add to order:", err);
+  }
+};
+
+const cartItems = ref([]);
+onMounted(async () => {
+  try {
+    const response = await authApi.get(`/user/cart/${restaurantId.value}`);
+    cartItems.value = response.data.cart_items;
+  } catch (err) {
+    console.error("❌ Failed to load cart:", err);
+  }
+});
+
+// calculate total amount
+const totalAmount = computed(() => {
+  return cartItems.value.reduce((total, item) => {
+    const base = item.menu_item_price * item.quantity;
+    const extras = item.options.reduce((sum, opt) => sum + (opt.extra_price || 0), 0) * item.quantity;
+    return total + base + extras;
+  }, 0);
+});
 
 /** ref: ChatGPT. placeholder script 
 const orderItems = ref([
@@ -36,20 +144,87 @@ const totalPrice = computed(() => {
 </script>
 
 <template>
-    <h1>Step 4: Place your Order</h1>
 
-    <h2 style="font-size: x-large; padding-left: 7%; font-weight: bold;">Order Summary</h2>
-    <br>
-    <div class="order-items">
-      <div class="order-item">
-        <div class="item-name">Item</div>
-        <div class="item-quantity">Quantity</div>
-        <div class="item-price">$Price</div>
-      </div>
-      <div class="order-total">
-        <h3 style="padding-right: 7%;">Total: $Total</h3>
-      </div>
+  <div class="px-10 py-5">
+    <h1 class="text-center text-xl text-green-700 font-bold p-3 pb-0">Place your order</h1>
+    <ul >
+      <li
+        v-for="item in cartItems"
+        :key="item.cart_item_id"
+        class="border-b p-3"
+      >
+        <!-- menu name and price in the same line -->
+        <div class="flex items-center gap-x-2">
+          <span class="flex-1 break-words">
+            {{ item.menu_item_name }}
+          </span>
+          <span class="w-[60px] flex-shrink-0 text-left whitespace-nowrap">
+            $ {{ item.menu_item_price.toFixed(2) }}
+          </span>
+        </div>
+
+        <ul v-if="item.options.length" class="mt-1 pl-4">
+          <li
+            v-for="opt in item.options"
+            :key="opt.id"
+            class="flex items-center gap-x-2 text-sm text-neutral-500"
+          >
+            <span class="flex-1 break-words">
+              {{ opt.description }}: {{ opt.name }}
+            </span>
+            <span
+              v-if="opt.extra_price > 0"
+              class="w-[60px] flex-shrink-0 text-left whitespace-nowrap"
+            >
+              + $ {{ opt.extra_price.toFixed(2) }}
+            </span>
+          </li>
+        </ul>
+
+        <!-- quantity control here -->
+        <div class="mt-2 pl-4">
+          <!-- when quantity = 1 -->
+          <div
+            v-if="item.quantity === 1"
+            class="flex items-center justify-center text-green-700 bg-white rounded-full shadow-md w-24"
+          >
+            <button @click="removeItem(item)">
+              <Icon icon="mdi:trash-can-outline" class="w-5 h-5" />
+            </button>
+            <span class="text-center">{{ item.quantity }}</span>
+            <button @click="addItem(item)" class="text-green-700">
+              <Icon icon="mdi:plus" class="w-5 h-5 " />
+            </button>
+          </div>
+
+          <!-- when quantity ≥ 2 -->
+          <div
+            v-else
+            class="flex items-center justify-center bg-white text-green-700 rounded-full shadow-md w-24"
+          >
+            <button @click="removeItem(item)">
+              <Icon icon="mdi:minus" class="w-5 h-5" />
+            </button>
+            <span class="text-center">{{ item.quantity }}</span>
+            <button @click="addItem(item)">
+              <Icon icon="mdi:plus" class="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      </li>
+    </ul>
+
+    <!-- total -->
+    <div class="flex items-center font-bold mt-4 p-3 text-green-700">
+      <span class="flex-1">
+        Subtotal ({{ cartItems.reduce((sum, i) => sum + i.quantity, 0) }} {{ cartItems.reduce((sum, i) => sum + i.quantity, 0) === 1 ? 'item' : 'items' }})
+      </span>
+      <span class="w-[60px] flex-shrink-0 text-left whitespace-nowrap">
+        $ {{ totalAmount.toFixed(2) }}
+      </span>
     </div>
+  </div>
+    
 
     <div class="payment-section">
       <h2 style="font-size: larger; font-weight: bold;">Payment Information</h2>
@@ -79,11 +254,6 @@ const totalPrice = computed(() => {
 </template>
   
 <style scoped>
-h1 {
-  font-size: xx-large;
-  text-align: center;
-  padding-top: 2%;
-}
 .order-item .item-name {
   font-weight: bold;
   color: #333;

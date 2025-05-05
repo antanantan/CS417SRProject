@@ -88,8 +88,6 @@ const filteredMenu = computed(() => {
         }
       }
     }
-    console.log("userAllergenIds", userAllergenIds);
-    console.log("item allergens", item.name, item.allergens);
 
     return matchesName && (!allergyFilterOn.value || !hasAllergies);
   });
@@ -284,8 +282,10 @@ const addItemWithOptions = async () => {
 const cartItems = ref([]);
 onMounted(async () => {
   try {
-    const response = await authApi.get(`/user/cart/${restaurantId.value}`);
-    cartItems.value = response.data.cart_items;
+    // const response = await authApi.get(`/user/cart/${restaurantId.value}`);
+    await fetchUserCart(restaurantId.value);
+    // cartItems.value = response.data.cart_items;
+    cartItems.value = userCart.value;  
   } catch (err) {
     console.error("❌ Failed to load cart:", err);
   }
@@ -317,7 +317,8 @@ const totalAmount = computed(() => {
 
 // proceed to checkout when button is clicked
 const proceedToCheckout = () => {
-  router.push("/order");
+  // router.push("/order");
+  router.push(`/order/${restaurantId.value}`);
 };
 </script>
 
@@ -434,7 +435,7 @@ const proceedToCheckout = () => {
                   class="w-32 h-full object-cover absolute right-0 top-0 z-0 "/>
 
                 <!-- show modal if the item has options -->
-                <button v-if="Object.keys(item.options).length" @click="openModal(item)" class="group w-9 h-9 z-30 flex items-center justify-center rounded-full shadow-md bg-white opacity-100 hover:bg-green-700 text-green-700 hover:text-white absolute right-3 bottom-3">
+                <button v-if="Object.keys(item.options).length" @click="openModal(item)" class="group w-9 h-9 flex items-center justify-center rounded-full shadow-md bg-white opacity-100 hover:bg-green-700 text-green-700 hover:text-white absolute right-3 bottom-3">
                   <Icon v-if="!item.quantity || item.quantity === 0" icon="mdi:plus" class="w-5 h-5 " />
                   <span v-else>
                     {{ item.quantity ? item.quantity : '' }}
@@ -558,7 +559,7 @@ const proceedToCheckout = () => {
                 {{ item.menu_item_name }}
               </span>
               <span class="w-[60px] flex-shrink-0 text-left whitespace-nowrap">
-                $ {{ item.menu_item_price.toFixed(2) }}
+                $ {{ item.menu_item_price != null ? `${item.menu_item_price.toFixed(2)}` : 0 }}
               </span>
             </div>
 

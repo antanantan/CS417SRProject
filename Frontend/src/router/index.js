@@ -44,9 +44,10 @@ const router = createRouter({
       props: false, 
     },
     {
-      path: '/order',
+      path: '/order/:restaurantId?',
       name: 'Order',
-      component: OrderView 
+      component: OrderView,
+      props: false, 
     },
     {
       path: '/test',
