@@ -559,52 +559,35 @@ def get_menu(restaurant_id):
     if not restaurant:
         return jsonify({"error": "Restaurant not found"}), 404
 
-    #checks for user allergies if authenticated
-    user_allergens = []
-    auth_header = request.headers.get('Authorization')
-
-    if auth_header and auth_header.startswith('Bearer '):
-        try:
-            token = auth_header.split(' ')[1]
-
-        #verify and decode token
-            user_data = None
-            try:    
-                user_data = decode_token(token)
-                user_id = user_data.get('sub')
-                is_guest = user_data.get('is_guest', False)
-
-                if is_guest:
-                    guest_allergies = get_guest_data(f'guest_allergies:{user_id}')
-                    if guest_allergies:
-                        #process guest allergies for filtering
-                        for allergy in guest_allergies:
-                            allergen_id = allergy.get('allergen_id')
-                            allergen = db.session.get(Allergen, allergen_id)
-                            if allergen:
-                                user_allergens.append({
-                                    'name': allergen.name,
-                                    'scale': allergy.get('scale', 0)
-                                })
-                else:
-                    #regular user 
-                    user_allergies = UserAllergy.query.filter_by(user_id=user_id).all()
-                    for ua in user_allergies:
-                        allergen = db.session.get(Allergen, ua.allergen_id)
-                        if allergen:
-                            user_allergens.append({
-                                'name': allergen.name,
-                                'scale': ua.scale
-                            })
-            except Exception as e:
-                return jsonify({"error": f"Error decoding token: {str(e)}"}), 401
-        except Exception as ef:
-            return jsonify({"error": "Error decoding token"}), 401
-
     menu_items = Menu.query.filter_by(restaurant_id=restaurant.id).all()
     menu_list = []
 
     for item in menu_items:
+        allergen_output = []
+        processed_group_ids = set()
+        processed_allergen_ids = set()
+        # process allergen groups first
+        for group in item.allergen_groups:
+            if group.id in processed_group_ids:
+                continue
+            allergen_ids = [a.id for a in group.allergens]
+            if allergen_ids:
+                allergen_output.append({
+                    "label": group.name,
+                    "ids": allergen_ids
+                })
+                processed_group_ids.add(group.id)
+                processed_allergen_ids.update(allergen_ids)
+        # add allergens that are not in groups
+        for allergen in item.allergens:
+            if allergen.id in processed_allergen_ids:
+                continue
+            allergen_output.append({
+                "label": allergen.name,
+                "ids": [allergen.id]
+            })
+            processed_allergen_ids.add(allergen.id)
+
         # get all option mappings for the menu item
         option_mappings = MenuOptionMapping.query.filter_by(menu_id=item.id).all()
         option_groups = {}
@@ -624,11 +607,34 @@ def get_menu(restaurant_id):
             
             option_items = MenuOptionItem.query.filter_by(group_id=option_group.id).all()
             for option_item in option_items:
+                option_allergen_output = []
+                option_processed_group_ids = set()
+                option_processed_allergen_ids = set()
+                for group in option_item.allergen_groups:
+                    if group.id in option_processed_group_ids:
+                        continue
+                    allergen_ids = [a.id for a in group.allergens]
+                    if allergen_ids:
+                        option_allergen_output.append({
+                            "label": group.name,
+                            "ids": allergen_ids
+                        })
+                        option_processed_group_ids.add(group.id)
+                        option_processed_allergen_ids.update(allergen_ids)
+                for allergen in option_item.allergens:
+                    if allergen.id in option_processed_allergen_ids:
+                        continue
+                    option_allergen_output.append({
+                        "label": allergen.name,
+                        "ids": [allergen.id]
+                    })
+                    option_processed_allergen_ids.add(allergen.id)
+
                 option_groups[option_group.id]["items"].append({
                     "id": option_item.id,
                     "name": option_item.name,
                     "extra_price": option_item.extra_price,
-                    "allergens": option_item.allergens.split(", ") if option_item.allergens else []
+                    "allergens": option_allergen_output,
                 })
 
         menu_list.append({
@@ -638,7 +644,7 @@ def get_menu(restaurant_id):
             "sub_category": item.sub_category if item.sub_category else None,
             "price": item.price,
             "ingredients": item.ingredients.split(", ") if item.ingredients else [],
-            "allergens": item.allergens.split(", ") if item.allergens else [],
+            "allergens": allergen_output,
             "description": item.description if item.description else None,
             "image": url_for('static', filename=f"menu_img/{item.image_filename}", _external=True) if item.image_filename else None,
             "options": option_groups

@@ -1,5 +1,5 @@
 import pandas as pd
-from database.db_models import db, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping
+from database.db_models import db, Restaurant, Menu, MenuOptionGroup, MenuOptionItem, MenuOptionMapping, Allergen, AllergenGroup
 
 def style_heading(text: str) -> str:
     small_words = {"or", "the", "and", "of", "a", "an", "to", "in", "on", "at", "for", "but", "nor", "with", "by", "as", "up", "out", "off", "so", "yet", "not"}
@@ -76,12 +76,32 @@ def seed_menus(file_path):
                         name=style_heading(menu_row["name"]),
                         price=float(menu_row["price"]) if pd.notna(menu_row["price"]) else 0.0,
                         ingredients=style_main(menu_row["ingredients"]) if pd.notna(menu_row["ingredients"]) else None,
-                        allergens=style_heading(menu_row["allergens"]) if pd.notna(menu_row["allergens"]) else None,
+                        # allergens=style_heading(menu_row["allergens"]) if pd.notna(menu_row["allergens"]) else None,
                         description=style_main(menu_row["description"]) if pd.notna(menu_row["description"]) else None,
                         image_filename=f"{menu_sheet_name}/{menu_row["image_filename"]}" if pd.notna(menu_row["image_filename"]) else None
                     )
                     db.session.add(new_menu)
                     db.session.flush() # flush to get the id of the new menu
+
+                    if pd.notna(menu_row["allergens"]):
+                        allergen_names = [a.strip() for a in menu_row["allergens"].split(',')]
+                        for name in allergen_names:
+                            # Try matching AllergenGroup (by name or other_names)
+                            group = db.session.query(AllergenGroup).filter(
+                                (AllergenGroup.name.ilike(name)) |
+                                (AllergenGroup.other_names.ilike(f"%{name}%"))
+                            ).first()
+                            if group:
+                                if group not in new_menu.allergen_groups:
+                                    new_menu.allergen_groups.append(group)
+                                continue  # skip to next name if matched
+                            # Else, try matching Allergen
+                            allergen = db.session.query(Allergen).filter(Allergen.name.ilike(name)).first()
+                            if allergen:
+                                if allergen not in new_menu.allergens:
+                                    new_menu.allergens.append(allergen)
+                            else:
+                                print(f"⚠️ Warning: No allergen or group matched for '{name}' in menu '{new_menu.name}'")
 
                 # process option groups
                 # if option_group_description is provided   
@@ -136,9 +156,30 @@ def seed_menus(file_path):
                         group_id=last_option_group_id,
                         name=style_main(menu_row["option_item_name"]),
                         extra_price=float(menu_row["extra_price"]) if pd.notna(menu_row["extra_price"]) else 0.0,
-                        allergens=style_heading(menu_row["option_allergens"]) if pd.notna(menu_row["option_allergens"]) else None
                     )
                     db.session.add(new_option_item)
+                    db.session.flush()
+
+                    if pd.notna(menu_row["option_allergens"]):
+                        allergen_names = [a.strip() for a in menu_row["option_allergens"].split(',')]
+                        for name in allergen_names:
+                            # Try matching AllergenGroup (by name or other_names)
+                            group = db.session.query(AllergenGroup).filter(
+                                (AllergenGroup.name.ilike(name)) |
+                                (AllergenGroup.other_names.ilike(f"%{name}%"))
+                            ).first()
+                            if group:
+                                if group not in new_option_item.allergen_groups:
+                                    new_option_item.allergen_groups.append(group)
+                                continue
+
+                            # Else, try matching Allergen
+                            allergen = db.session.query(Allergen).filter(Allergen.name.ilike(name)).first()
+                            if allergen:
+                                if allergen not in new_option_item.allergens:
+                                    new_option_item.allergens.append(allergen)
+                            else:
+                                print(f"⚠️ Warning: No allergen or group matched for '{name}' in option '{new_option_item.name}'")
 
         # commit changes
         db.session.commit()

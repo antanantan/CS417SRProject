@@ -8,7 +8,7 @@ def seed_db():
     Seed the database with initial data for allergens, restaurants, and menus.
     """
     try:
-        seed_allergens("database/restaurants_menus.xlsx")  
+        seed_allergens("database/allergens.xlsx")  
         seed_restaurants("database/restaurants_menus.xlsx")  
         seed_menus("database/restaurants_menus.xlsx")
 

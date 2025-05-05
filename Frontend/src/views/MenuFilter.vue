@@ -51,7 +51,8 @@ const fetchMenu = async (restaurantId) => {
 };  
 
 // When the component is mounted, fetch the restaurant's menu based on the ID from the URL
-onMounted(() => {
+onMounted(async () => {
+  await fetchUserAllergies();
   const restaurantId = route.params.restaurantId; // Get the restaurantId from the URL
   if (restaurantId) {
     fetchMenu(restaurantId); // Fetch the menu for the restaurant
@@ -71,13 +72,25 @@ const toggleAllergyFilter = () => {
 
 const filteredMenu = computed(() => {
   if (!menu.value) return [];
-  const userAllergenNames = userAllergies.value.map(a => a.name);
+
+  const userAllergenIds = userAllergies.value.map(a => Number(a.allergen_id));
 
   return menu.value.filter((item) => {
     const matchesName = item.name.toLowerCase().includes(searchQuery.value.toLowerCase());
-    const hasAllergies = userAllergenNames.length > 0
-      ? item.allergens.some(allergenName => userAllergenNames.includes(allergenName))
-      : false;
+
+    let hasAllergies = false;
+    if (allergyFilterOn.value && userAllergenIds.length && item.allergens?.length) {
+      for (let allergen of item.allergens) {
+        const match = Array.isArray(allergen.ids) && allergen.ids.some(id => userAllergenIds.includes(id));
+        if (match) {
+          hasAllergies = true;
+          break;
+        }
+      }
+    }
+    console.log("userAllergenIds", userAllergenIds);
+    console.log("item allergens", item.name, item.allergens);
+
     return matchesName && (!allergyFilterOn.value || !hasAllergies);
   });
 });
@@ -282,7 +295,7 @@ const menusWithQuantity = computed(() => {
   const lookup = Object.fromEntries(
     cartItems.value.map(ci => [ci.menu_item_id, ci])
   )
-  return menu.value.map(m => {
+  return filteredMenu.value.map(m => {
     const entry = lookup[m.id] || {}
     return {
       ...m,
@@ -412,7 +425,7 @@ const proceedToCheckout = () => {
                   <p v-if="item.description" class="text-sm text-neutral-500 truncate">{{ item.description }}</p>
                   <p v-if="item.allergens.length" class="flex items-center text-sm text-rose-400 truncate">
                     <Icon icon="mdi:food-allergy" class="w-4 h-4 mr-1" />
-                    {{ item.allergens.join(", ") }}
+                    {{ item.allergens.map(a => a.label).join(", ") }}
                   </p>
                 </div>
 
@@ -508,7 +521,7 @@ const proceedToCheckout = () => {
                         class="text-sm text-rose-400 flex items-center"
                       >
                         <Icon icon="mdi:food-allergy" class="w-4 h-4 mr-1" />
-                        {{ option.allergens.join(", ") }}
+                        {{ option.allergens.map(a => a.label).join(", ") }}
                       </p>
                     </div>
                   </label>
@@ -610,7 +623,7 @@ const proceedToCheckout = () => {
           </span>
         </div>
         <!-- Proceed to checkout button -->
-        <div class="flex justify-end p-3">
+        <div class="flex justify-center p-3">
           <button @click="proceedToCheckout" class="border border-green-700 w-auto text-center text-green-700 rounded-xl hover:bg-green-700 hover:text-white transition p-2 px-3">
             Proceed to Checkout
           </button>
