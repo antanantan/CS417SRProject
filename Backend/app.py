@@ -759,7 +759,7 @@ def add_cart_item():
     if not menu_id:
         return jsonify({"message": "Missing menu_item_id."}), 400
 
-    cart = Cart.query.filter_by(user_id=user_id).first()
+    cart = Cart.query.filter_by(user_id=user_id, restaurant_id=data.get("restaurant_id")).first()
     if not cart:
         cart = Cart(user_id=user_id, restaurant_id=data.get("restaurant_id"))
         db.session.add(cart)
